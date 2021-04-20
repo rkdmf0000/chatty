@@ -29,7 +29,17 @@ public:
     CHATTY_ANY column(CHATTY_UCHAR_PTR column);
     CHATTY_ANY column(CHATTY_UCHAR_PTR column, CHATTY_UCHAR_PTR value);
 
-    CHATTY_ERROR_CODE exec();
+    CHATTY_ERROR_CODE exec(CHATTY_FLAG row_proceed = false);
+
+
+    CHATTY_FLAG initialization_table_connection();
+    CHATTY_FLAG fetchall_connection(CHATTY_ANY* group);
+    CHATTY_FLAG fetchone_connection(CHATTY_ANY* article);
+    CHATTY_STATIC CHATTY_FLAG fetchall_connection_release(CHATTY_ANY* pointer);
+
+
+    CHATTY_FLAG get_count();
+
 
     /**
      * REQUESTS-SEARCH
@@ -42,7 +52,7 @@ public:
     /**
      * REQUESTS-ACTION
      * */
-    CHATTY_ANY delete_search(const CHATTY_UCHAR_PTR column, const CHATTY_UCHAR_PTR value);
+    //CHATTY_ANY delete_search(const CHATTY_UCHAR_PTR column, const CHATTY_UCHAR_PTR value);
 
 private:
     /**
@@ -52,6 +62,7 @@ private:
     CHATTY_ANY _generate_where_common();
     CHATTY_ANY _generate_non_value_grouping_column_key();
     CHATTY_ANY _generate_non_value_grouping_column();
+    CHATTY_ANY _generate_query_block(CHATTY_ANY* block);
 
 
 };

@@ -5,10 +5,10 @@
 #include "chatty_embedded_db_controller.h"
 CHATTY_ANY chatty_embedded_db_controller::use(const CHATTY_STRING& filepath) {
     if (this->is_db_standby) {
-        this->test_print((CHATTY_CHAR_PTR)"db connection has been connect");
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"db connection has been connect");
         return;
     };
-    this->test_print((CHATTY_CHAR_PTR)"open chatty db connection");
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"open chatty db connection");
     this->latest_error_status = sqlite3_open(filepath.c_str(), &this->selected_db);
     if (this->latest_error_status == SQLITE_OK)
         this->is_db_standby = true;
@@ -16,10 +16,10 @@ CHATTY_ANY chatty_embedded_db_controller::use(const CHATTY_STRING& filepath) {
 
 CHATTY_ANY chatty_embedded_db_controller::close() {
     if (!this->is_db_standby) {
-        this->test_print((CHATTY_CHAR_PTR)"db connection has been close");
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"db connection has been close");
         return;
     };
-    this->test_print((CHATTY_CHAR_PTR)"close chatty db connection");
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"close chatty db connection");
     this->latest_error_status = sqlite3_close(this->selected_db);
     if (this->latest_error_status == CHATTY_STATUS_OK)
         this->is_db_standby = false;
@@ -65,7 +65,7 @@ CHATTY_ANY chatty_embedded_db_controller::behavior(CHATTY_UCHAR type) {
                 break;
         };
     } else {
-        this->test_print((CHATTY_CHAR_PTR)"ERROR OCCURRED - Duplicated behavior change");
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"ERROR OCCURRED - Duplicated behavior change");
         printf("by [%s] function on %s:%d\n",__FUNCTION__ ,__FILE__, __LINE__);
         abort();
     };
@@ -327,7 +327,7 @@ CHATTY_ANY chatty_embedded_db_controller::_generate_non_value_grouping_column() 
 }
 
 
-CHATTY_ERROR_CODE chatty_embedded_db_controller::exec() {
+CHATTY_ERROR_CODE chatty_embedded_db_controller::exec(CHATTY_FLAG row_proceed) {
     CHATTY_QUERY_BLOCK result_query_stack_block;
 
     switch((CHATTY_UINT32)this->query_form.request_type) {
@@ -373,7 +373,7 @@ CHATTY_ERROR_CODE chatty_embedded_db_controller::exec() {
 
     if (sqlite3_prepare_v2(this->selected_db, (CHATTY_CHAR_PTR)result_query_stack_block.value, -1, &this->selected_db_handle, nullptr) != CHATTY_STATUS_OK) {
         #if defined(CHATTY_DO_BUILD_DEBUG)
-        this->test_print((CHATTY_CHAR_PTR)"prepare_v2 failed");
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"prepare_v2 failed");
         #endif
         this->__update_query_execution_status();
         sqlite3_finalize(this->selected_db_handle);
@@ -383,7 +383,7 @@ CHATTY_ERROR_CODE chatty_embedded_db_controller::exec() {
             case CHATTY_KEYWORD_REQUEST_SELECT:{
                 if (sqlite3_step(this->selected_db_handle) != CHATTY_STATUS_ROW) {
 #if defined(CHATTY_DO_BUILD_DEBUG)
-                    this->test_print((CHATTY_CHAR_PTR)"step failed - select");
+                    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"step failed - select");
 #endif
                     this->__update_query_execution_status();
                     sqlite3_finalize(this->selected_db_handle);
@@ -397,7 +397,7 @@ CHATTY_ERROR_CODE chatty_embedded_db_controller::exec() {
             default:{
                 if (sqlite3_step(this->selected_db_handle) != CHATTY_STATUS_DONE) {
 #if defined(CHATTY_DO_BUILD_DEBUG)
-                    this->test_print((CHATTY_CHAR_PTR)"step failed - default");
+                    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"step failed - default");
 #endif
                     this->__update_query_execution_status();
                     sqlite3_finalize(this->selected_db_handle);
@@ -411,6 +411,166 @@ CHATTY_ERROR_CODE chatty_embedded_db_controller::exec() {
 
 
     };
+}
+
+
+
+CHATTY_ANY chatty_embedded_db_controller::_generate_query_block(CHATTY_ANY *block) {
+    CHATTY_QUERY_BLOCK* rf_block = (CHATTY_QUERY_BLOCK*)block;
+    CHATTY_QUERY_BLOCK result_query_stack_block;
+
+    switch((CHATTY_UINT32)this->query_form.request_type) {
+        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_SELECT:
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SELECT, CHATTY_CONST_KEYWORD_SIZE_SELECT);
+            this->_generate_select_column_common();
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_FROM, CHATTY_CONST_KEYWORD_SIZE_FROM);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) this->query_form.target_table_name.value, this->query_form.target_table_name.value_size);
+            this->_generate_where_common();
+            break;
+        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_INSERT:
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_INSERT, CHATTY_CONST_KEYWORD_SIZE_INSERT);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_INTO, CHATTY_CONST_KEYWORD_SIZE_INTO);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) this->query_form.target_table_name.value, this->query_form.target_table_name.value_size);
+            this->_generate_non_value_grouping_column_key();
+            if (query_form.column_part_key.size != 0 && query_form.column_part.size != 0) {
+                this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
+                this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_VALUES, CHATTY_CONST_KEYWORD_SIZE_VALUES);
+            };
+            this->_generate_non_value_grouping_column();
+            break;
+        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_UPDATE:
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_UPDATE, CHATTY_CONST_KEYWORD_SIZE_UPDATE);
+            break;
+        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_DELETE:
+            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_DELETE, CHATTY_CONST_KEYWORD_SIZE_DELETE);
+            break;
+    };
+    this->__mem_query_str_flush(&result_query_stack_block);
+
+    rf_block->value = result_query_stack_block.value;
+    rf_block->value_size = result_query_stack_block.value_size;
+    rf_block->join_keyword = result_query_stack_block.join_keyword;
 };
+
+
+
+
+/**
+ * @param   group    CHATTY_DB_COLUMN_CONNECTIO***  structure heap 의 reference 의 참조 pointer
+ * */
+CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection(CHATTY_ANY* group) {
+    CHATTY_DB_COLUMN_CONNECTION_GROUP_COLLECTION* rf_collection = (CHATTY_DB_COLUMN_CONNECTION_GROUP_COLLECTION*)group;
+    CHATTY_SIZE idx(0);
+    CHATTY_SIZE row_length(0);
+    CHATTY_QUERY_BLOCK _block;
+#if defined(CHATTY_DO_BUILD_DEBUG)
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"internal fetchall function");
+#endif
+    this->_generate_query_block(&_block);
+
+    if (sqlite3_prepare_v2(this->selected_db, (CHATTY_CHAR_PTR)_block.value, -1, &this->selected_db_handle, nullptr) != CHATTY_STATUS_OK) {
+        sqlite3_finalize(this->selected_db_handle);
+        return false;
+    } else {
+        while (sqlite3_step(this->selected_db_handle) == CHATTY_STATUS_ROW)
+        {
+            ++row_length;
+            CHATTY_DB_COLUMN_CONNECTION** new_group = (CHATTY_DB_COLUMN_CONNECTION**)malloc(sizeof(CHATTY_DB_COLUMN_CONNECTION**) * row_length);
+            CHATTY_DB_COLUMN_CONNECTION* new_heap = (CHATTY_DB_COLUMN_CONNECTION*)malloc(sizeof(CHATTY_DB_COLUMN_CONNECTION));
+            new_heap->idx                   = sqlite3_column_int64(this->selected_db_handle, 0);
+            new_heap->id                    = sqlite3_column_int64(this->selected_db_handle, 1);
+            new_heap->latest_connect_date   = sqlite3_column_int64(this->selected_db_handle, 2);
+            new_heap->is_online             = sqlite3_column_int(this->selected_db_handle, 3);
+            //group initialization
+            for(idx=0;idx<row_length;++idx)
+                new_group[idx] = nullptr;
+            //최초 실행만 거름
+            if (row_length-1 != 0) {
+                //re-fill history
+                for(idx=0;idx<row_length;++idx)
+                    new_group[idx] = rf_collection->value[idx];
+            };
+            //group fill-up
+            new_group[row_length-1] = new_heap;
+            delete rf_collection->value;
+            rf_collection->value = new_group;
+        };
+        CHATTY_SIZE* new_size = (CHATTY_SIZE*)malloc(sizeof(CHATTY_SIZE));
+        *new_size = row_length;
+        free(rf_collection->size);
+        rf_collection->size = new_size;
+
+#if defined(CHATTY_DO_BUILD_DEBUG)
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"PRINT TEST FETCH ALL RESULT");
+        std::cout << "ROWS ARE TOTALLY EXISTS : " << row_length << '\n';
+        for(idx=0;idx<row_length;++idx) {
+            std::cout << rf_collection->value[idx] << " / " << rf_collection->value[idx]->idx << " / " << rf_collection->value[idx]->id << " / " << rf_collection->value[idx]->latest_connect_date << " / " << rf_collection->value[idx]->is_online << '\n';
+        };
+#endif
+    };
+
+
+    delete _block.value;
+    return true;
+};
+
+CHATTY_FLAG chatty_embedded_db_controller::fetchone_connection(CHATTY_ANY *article) {
+    CHATTY_DB_COLUMN_CONNECTION* rf_article = (CHATTY_DB_COLUMN_CONNECTION*)article;
+    CHATTY_QUERY_BLOCK _block;
+
+#if defined(CHATTY_DO_BUILD_DEBUG)
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"internal fetchone function");
+#endif
+
+    this->_generate_query_block(&_block);
+    if (sqlite3_prepare_v2(this->selected_db, (CHATTY_CHAR_PTR)_block.value, -1, &this->selected_db_handle, nullptr) != CHATTY_STATUS_OK) {
+        sqlite3_finalize(this->selected_db_handle);
+        return false;
+    } else {
+        while (sqlite3_step(this->selected_db_handle) == CHATTY_STATUS_ROW)
+        {
+            rf_article->idx                   = sqlite3_column_int64(this->selected_db_handle, 0);
+            rf_article->id                    = sqlite3_column_int64(this->selected_db_handle, 1);
+            rf_article->latest_connect_date   = sqlite3_column_int64(this->selected_db_handle, 2);
+            rf_article->is_online             = sqlite3_column_int(this->selected_db_handle, 3);
+            return true;
+        };
+    };
+    delete _block.value;
+    return false;
+};
+
+
+CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection_release(CHATTY_ANY *pointer) {
+    CHATTY_SIZE idx(0);
+    CHATTY_DB_COLUMN_CONNECTION_GROUP_COLLECTION* rf_pointer = (CHATTY_DB_COLUMN_CONNECTION_GROUP_COLLECTION*)pointer;
+
+#if defined(CHATTY_DO_BUILD_DEBUG)
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"RELEASE GROUP COLLECTION");
+    std::cout << "RELEASE TARGET COUNT : " << *rf_pointer->size << '\n';
+#endif
+
+    for(idx=0;idx<*rf_pointer->size;++idx) {
+#if defined(CHATTY_DO_BUILD_DEBUG)
+        std::cout << "DELETE A VALUE : " << rf_pointer->value[idx] << '\n';
+#endif
+        delete rf_pointer->value[idx];
+    };
+#if defined(CHATTY_DO_BUILD_DEBUG)
+    std::cout << "DELETE A SIZE : " << rf_pointer->size << '\n';
+#endif
+    delete rf_pointer->size;
+
+    return false;
+}
+
+
+CHATTY_FLAG chatty_embedded_db_controller::initialization_table_connection() {
+    return 0;
+}
 
 

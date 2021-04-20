@@ -49,13 +49,13 @@ protected:
     CHATTY_ERROR_STATUS latest_error_status;
 
 protected:
-    CHATTY_ANY test_print(CHATTY_CHAR_PTR text);
+    static CHATTY_ANY test_print(CHATTY_CHAR_PTR text);
     CHATTY_ANY __print_query_block(CHATTY_ANY* block_ptr);
     CHATTY_ANY __mem_query_add_str(CHATTY_UCHAR_PTR str, CHATTY_SIZE size);
     CHATTY_ANY __mem_query_str_flush(CHATTY_ANY* ref);
     CHATTY_ANY __mem_query_box_insert(CHATTY_ANY* block, CHATTY_ANY* ref);
     CHATTY_ANY __print_query_box(CHATTY_ANY* box_ptr);
-    CHATTY_ANY __print_table_name();
+    CHATTY_ANY __print_table_name() const;
     CHATTY_ANY __conv_query_quotes(CHATTY_ANY* block, CHATTY_QUOTES_TYPE type = CHATTY_KEYWORD_QUOTE_TYPE_DOUBLE);
     CHATTY_ANY __mem_injected_update_data(CHATTY_ANY* pallet, CHATTY_SIZE pallet_size, CHATTY_SIZE current_size, CHATTY_UINT32 where_at_ijt, CHATTY_ANY* ijt_data);
 

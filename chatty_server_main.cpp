@@ -16,21 +16,16 @@ int main() {
         std::cout << test_instance.get_error_msg() << '\n';
     };
 
-
     test_instance.behavior(CHATTY_KEYWORD_REQUEST_SELECT);
     test_instance.select((unsigned char*)CHATTY_T_CONN);
     test_instance.column((CHATTY_UCHAR_PTR)"*");
-    test_instance.where_and((CHATTY_UCHAR_PTR)"id",(CHATTY_UCHAR_PTR)"11");
 
-    std::cout << "QUERY RUN RESULT : " << test_instance.exec() << '\n';
+    CHATTY_DB_COLUMN_CONNECTION_GROUP_COLLECTION test_result_fetch_array_group;
+    test_instance.fetchall_connection(&test_result_fetch_array_group);
+    chatty_embedded_db_controller::fetchall_connection_release(&test_result_fetch_array_group);
 
-    /*
-     * //for select behavior
-    test_instance.where_and((CHATTY_UCHAR_PTR)"test_aa", (CHATTY_UCHAR_PTR)"가\'나");
-    test_instance.where_or((CHATTY_UCHAR_PTR)"4564", (CHATTY_UCHAR_PTR)"7\"8\"9");
-    test_instance.where_and((CHATTY_UCHAR_PTR)"description", (CHATTY_UCHAR_PTR)"홍콩을 가자!!");
-    */
-
+    CHATTY_DB_COLUMN_CONNECTION* test_x;
+    test_instance.fetchone_connection(&test_x);
 
     //test_instance.test();
     test_instance.close();

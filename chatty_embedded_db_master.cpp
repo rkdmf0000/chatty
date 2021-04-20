@@ -54,7 +54,7 @@ CHATTY_ANY chatty_embedded_db_master::print_version() {
     printf("%s : %s\n", __FUNCTION__, CHATTY_VERSION);
 };
 
-CHATTY_ANY chatty_embedded_db_master::__print_table_name() {
+CHATTY_ANY chatty_embedded_db_master::__print_table_name() const {
     printf("TARGET TABLE NAME : %s\n", this->query_form.target_table_name.value);
 };
 
@@ -67,6 +67,7 @@ CHATTY_ANY chatty_embedded_db_master::test_print(CHATTY_CHAR_PTR text) {
     std::cout << "━━─━─━━─━─━━" << '\n';
     std::cout << text << '\n';
     std::cout << "━━━━━━━━━━━━" << '\n';
+
 };
 
 CHATTY_ANY chatty_embedded_db_master::__update_query_execution_status() {
@@ -331,7 +332,7 @@ CHATTY_ANY chatty_embedded_db_master::__conv_query_quotes(CHATTY_ANY* block, CHA
             (CHATTY_UINT32) result_str[0] == CHATTY_DATA_QUOTE_DOUBLE) {
             n_start_at = 1;
 #if defined(CHATTY_DO_BUILD_DEBUG)
-            this->test_print((CHATTY_CHAR_PTR)"first* section quote opened");
+            chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"first* section quote opened");
 #endif
             ++nnn;
         } else {
@@ -339,7 +340,7 @@ CHATTY_ANY chatty_embedded_db_master::__conv_query_quotes(CHATTY_ANY* block, CHA
         };
 
 #if defined(CHATTY_DO_BUILD_DEBUG)
-        this->test_print((CHATTY_CHAR_PTR)"it debug for exception that occurred segment error when single character");
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"it debug for exception that occurred segment error when single character");
         int ____debug_test_1 = buffer_current_size;
         int ____debug_test_2 = (nnn == 0 ? 1 : 0);
         int ____debug_test_3 = ____debug_test_1 - (nnn == 0 ? 1 : 0) - 1;
@@ -352,7 +353,7 @@ CHATTY_ANY chatty_embedded_db_master::__conv_query_quotes(CHATTY_ANY* block, CHA
             (CHATTY_UINT32) result_str[last_quote_section_at] == CHATTY_DATA_QUOTE_DOUBLE) {
             n_end_at = buffer_current_size - 1 - (nnn == 0 ? 1 : 0);
 #if defined(CHATTY_DO_BUILD_DEBUG)
-            this->test_print((CHATTY_CHAR_PTR)"last* section quote opened");
+            chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"last* section quote opened");
 #endif
             ++nnn;
         } else {
