@@ -19,6 +19,10 @@ CHATTY_ANY chatty_embedded_db_controller::close() {
         chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"db connection has been close");
         return;
     };
+
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"finalize chatty handle");
+    sqlite3_finalize(this->selected_db_handle);
+
     chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"close chatty db connection");
     this->latest_error_status = sqlite3_close(this->selected_db);
     if (this->latest_error_status == CHATTY_STATUS_OK)
