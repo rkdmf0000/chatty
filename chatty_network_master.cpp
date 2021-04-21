@@ -17,9 +17,8 @@ CHATTY_ANY chatty_network_master::open(CHATTY_UINT32 port) {
     CHATTY_UINT32 clnt_addr_size; //socklen_t = unsigned int 대신에 chatty_uint32를 씀
 
 #if defined(CHATTY_DO_BUILD_DEBUG)
-    std::cout << "at :" << port << " port" << '\n';
     chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"SERVER SOCKET OPEN");
-    std::cout << "_ _ _ _" << '\n';
+    std::cout << "at :" << port << " port" << '\n';
 #endif
 
 

@@ -54,6 +54,8 @@ set(PROJECT_FILE_CONTENT
         "chatty_server_main.cpp"
         )
 
+
+
 #CONST VARIABLE DEFINES - END
 
 
@@ -67,6 +69,8 @@ add_definitions(-D_UNICODE)
 #ADD EXECUABLE
 add_executable(chatty ${PROJECT_FILE_HEADER} ${PROJECT_FILE_CONTENT})
 
+add_subdirectory(client_test)
+
 #ADD_CUSTOM_COMMAND(TARGET chatty
 #        POST_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/${${PROJECT_DEFS_PREFIX}DB_NAME}${${PROJECT_DEFS_PREFIX}DB_EXTENSION} ${PROJECT_BINARY_DIR}
@@ -75,5 +79,17 @@ add_executable(chatty ${PROJECT_FILE_HEADER} ${PROJECT_FILE_CONTENT})
 
 #ADD DEPENDENCE
 target_link_libraries(chatty PRIVATE sqlite3)
-
 target_compile_definitions(chatty PRIVATE CHATTY_DO_BUILD_DEBUG)
+
+
+
+
+#**********************************************
+# 아래서부터는 communication 클라이언트 테스트용 생성
+#**********************************************
+add_dependencies(chatty chatty_client)
+
+
+
+
+
