@@ -49,7 +49,6 @@ protected:
     CHATTY_ERROR_STATUS latest_error_status;
 
 protected:
-    static CHATTY_ANY test_print(CHATTY_CHAR_PTR text);
     CHATTY_ANY __print_query_block(CHATTY_ANY* block_ptr);
     CHATTY_ANY __mem_query_add_str(CHATTY_UCHAR_PTR str, CHATTY_SIZE size);
     CHATTY_ANY __mem_query_str_flush(CHATTY_ANY* ref);
@@ -66,6 +65,7 @@ protected:
 //    CHATTY_ANY fetch_all();
 
 public:
+    static CHATTY_ANY test_print(CHATTY_CHAR_PTR text);
     chatty_embedded_db_master();
     ~chatty_embedded_db_master();
 

@@ -31,6 +31,7 @@ set(PROJECT_VERSION_PATCH 0)
 set(PROJECT_VERSION_TWEAK 5)
 
 set(PROJECT_FILE_HEADER
+        "chatty_network_master.h"
         "chatty.h"
         "chatty_embedded_db_includes.h"
         "chatty_embedded_db_type_defs.h"
@@ -44,6 +45,7 @@ set(PROJECT_FILE_HEADER
         )
 
 set(PROJECT_FILE_CONTENT
+        "chatty_network_master.cpp"
         "chatty_embedded_db_interface.cpp"
         "chatty_embedded_db_result.cpp"
         "chatty_embedded_db_request.cpp"

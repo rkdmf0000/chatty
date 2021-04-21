@@ -360,7 +360,6 @@ CHATTY_ANY chatty_embedded_db_master::__conv_query_quotes(CHATTY_ANY* block, CHA
             n_end_at = buffer_current_size;
         };
 
-
         const CHATTY_SIZE remove_dummy_size(buffer_current_size - nnn +1);
         CHATTY_UCHAR remove_dummy[remove_dummy_size];
 

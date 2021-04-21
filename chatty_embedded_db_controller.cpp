@@ -480,8 +480,12 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection(CHATTY_ANY* group
         sqlite3_finalize(this->selected_db_handle);
         return false;
     } else {
-        while (sqlite3_step(this->selected_db_handle) == CHATTY_STATUS_ROW)
+        CHATTY_INT32 status(1);
+        while (status = sqlite3_step(this->selected_db_handle) == CHATTY_STATUS_ROW)
         {
+            if (status != CHATTY_STATUS_ROW)
+                return false;
+
             ++row_length;
             CHATTY_DB_COLUMN_CONNECTION** new_group = (CHATTY_DB_COLUMN_CONNECTION**)malloc(sizeof(CHATTY_DB_COLUMN_CONNECTION**) * row_length);
             CHATTY_DB_COLUMN_CONNECTION* new_heap = (CHATTY_DB_COLUMN_CONNECTION*)malloc(sizeof(CHATTY_DB_COLUMN_CONNECTION));
@@ -503,9 +507,10 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection(CHATTY_ANY* group
             delete rf_collection->value;
             rf_collection->value = new_group;
         };
+
         CHATTY_SIZE* new_size = (CHATTY_SIZE*)malloc(sizeof(CHATTY_SIZE));
         *new_size = row_length;
-        free(rf_collection->size);
+        delete rf_collection->size;
         rf_collection->size = new_size;
 
 #if defined(CHATTY_DO_BUILD_DEBUG)
@@ -515,8 +520,8 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection(CHATTY_ANY* group
             std::cout << rf_collection->value[idx] << " / " << rf_collection->value[idx]->idx << " / " << rf_collection->value[idx]->id << " / " << rf_collection->value[idx]->latest_connect_date << " / " << rf_collection->value[idx]->is_online << '\n';
         };
 #endif
-    };
 
+    };
 
     delete _block.value;
     return true;
