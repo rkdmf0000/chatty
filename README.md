@@ -43,6 +43,16 @@ sql query helper 만들어서 쓰려고 하는중
     //컬럼 정의
     test_instance.column((CHATTY_UCHAR_PTR)"*");
 
+
+    /** connection의 경우 아래 스트럭쳐 그대로 사용하면 됨
+    *   struct CHATTY_DB_COLUMN_CONNECTION {
+    *       CHATTY_UINT32   idx;
+    *       CHATTY_UINT32   id;
+    *       CHATTY_UINT32   latest_connect_date;
+    *       CHATTY_FLAG     is_online;
+    *   };
+    */
+
     //복수 확인 (메모리 해제 필요)
     CHATTY_DB_COLUMN_CONNECTION_GROUP_COLLECTION test_result_fetch_array_group;
     if (test_instance.fetchall_connection(&test_result_fetch_array_group)) {
