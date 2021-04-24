@@ -628,7 +628,11 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     //return value type definition
     enum class type {INT32,INT64,TEXT};
 
-    //definition internal function
+
+    /**
+     * @usage       internal function definition by upside
+     * @desc        It need to release after use!
+    * */
     auto ctoi_roll = [](unsigned char* char_txt)->const int {
         int i(0);
         int res(0x55555555);
@@ -642,6 +646,32 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
         return res;
     };
 
+    /**
+     * @usage       internal function definition by upside
+     * @notice      It need to release after use!
+     * @notice      It is utilize distance about between `A` and `a` and make epicenter.
+     * @notice      대문자보다 소문자가 더 높은 수에 배정되있다.
+     * */
+    auto lowscale_up_alphabet = [](const unsigned char* char_txt, const unsigned int size)->unsigned char* {
+        unsigned char* fc = (unsigned char*)malloc(sizeof(unsigned char) * size);
+        unsigned int idx(0);
+
+        unsigned int _dummy_a = (unsigned int)'A';
+        unsigned int _dummy_b = (unsigned int)'a';
+        unsigned int epicenter(_dummy_b - _dummy_a);
+
+        for(idx=0;idx<size;++idx) {
+            unsigned int buff_n = (unsigned int)char_txt[idx];
+            unsigned int buff_res(0);
+            if (buff_n >= 65 && buff_n <= 90) {
+                buff_res = buff_n + epicenter;
+            } else {
+                buff_res = buff_n;
+            };
+            fc[idx] = buff_res;
+        };
+        return fc;
+    };
 
     CHATTY_FLAG skip(false),exed(false);
 
@@ -747,13 +777,14 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     //memory copy for last
     data_type_letter_space = new_data_type_letter_space_for_last;
 
-    //debug : 메모리 확인용 출력
-    for(loop_idx=0;loop_idx<data_type_cnt;++loop_idx)
-        std::cout << "- - - - ready letter space : " << data_type_letter_space[loop_idx] << '\n';
-
     //debug : 타입 비교
     //`data_type`에서  data_type_letter_space[n]만큼 읽고 1개 건너뛰고 다시 하나 읽는 방식으로 끝까지 감.
     CHATTY_SIZE stack(0);
+
+    const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
+    const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
+    const CHATTY_UINT32 _type_text        = ctoi_roll((CHATTY_UCHAR_PTR)"text");
+
     for(loop_idx=0;loop_idx<data_type_cnt;++loop_idx) {
         CHATTY_SIZE idx(0);
         CHATTY_SIZE uchar_size = sizeof(CHATTY_UCHAR);
@@ -768,21 +799,24 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
         memcpy(buff_for_var, data_type + stack, letter_space * uchar_size);
         stack = stack + letter_space + 1;
 
-        const CHATTY_UINT32 buff_for_compare  = ctoi_roll((CHATTY_UCHAR_PTR)buff_for_var);
-        const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
-        const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
-        const CHATTY_UINT32 _type_text        = ctoi_roll((CHATTY_UCHAR_PTR)"text");
+        //todo : 메모리를 제거했나요? (y@/n)
+        //영어 대문자를 소문자로 변경
+        CHATTY_UCHAR_PTR buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space+1);
+
+        //쉬운 비교를 위해 단순구조 해시로 정수 변경후 비교
+        const CHATTY_UINT32 buff_for_compare  = ctoi_roll((CHATTY_UCHAR_PTR)buff_low_scaled_var);
 
         if (buff_for_compare == _type_int) {
-            printf("%s\n", "(Notice) be setting a column to `int32`");
+            printf("(Notice) be setting a %d column to `int32`\n", loop_idx);
         } else if(buff_for_compare == _type_int64) {
-            printf("%s\n", "(Notice) be setting a column to `int64`");
+            printf("(Notice) be setting a %d column to `int64`\n", loop_idx);
         } else if(buff_for_compare == _type_text) {
-            printf("%s\n", "(Notice) be setting a column to `text`");
+            printf("(Notice) be setting a %d column to `text`\n", loop_idx);
         } else {
-            printf("%s\n", "(Notice) be setting a column to `UNDEFINED`");
+            printf("(Notice) be setting a %d column to `int32 as DEFAULT.`\n", loop_idx);
         };
 
+        delete buff_low_scaled_var;
     };
 
     if (sqlite3_open((CHATTY_CHAR_PTR)db_path, &sqlite3_structure) != CHATTY_STATUS_OK) {
