@@ -49,6 +49,35 @@ int main() {
 ```
 
 
+
+```console
+
+print_library_version : 3.35.4
+print_version : 0.1.0.5
+data_type str size : 17
+data_type cnt : 2
+data_type last thing size expected : 5
+- - - - ready letter space : 5
+- - - - ready letter space : 5
+- - - - ready letter space : 5
+(Notice) be setting a column to `int32`
+(Notice) be setting a column to `int64`
+(Notice) be setting a column to `UNDEFINED`
+(Success) db open
+(Success) prepare skipped
+(Notice) statement is done (101)
+(Notice) exed put on reference to status.
+(Notice) ** reset (0), finalize (0), close (0)
+fetch_request_exec returned value-addr : 0 to 0
+fetch_request_exec returned status : 101
+비정상적인 임베디드 데이터베이스 초기화로 인한 실행거부
+```
+
+
+
+
+
+
 ```c++
     //sqlite3 라이브러리 버전
     chatty_db::print_library_version();
