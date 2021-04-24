@@ -25,14 +25,39 @@ public:
     /**
      * COMMON
      * */
+
+
+    /**
+     * @title   : fetch_request_exec
+     * @desc    : 쿼리를 보내는 함수
+     * -----------------------------
+     * @param   unsigned char* db_path          데이터베이스 파일의 위치와 파일명 없으면 sqlite3 라이브러리 특성상 자동으로 생성된다.
+     *                                          sqlite3의 예약어인 :memory: 사용 가능하다.
+     * @param   unsigned char* query            sqlite3의 sql 구문
+     * @param   unsigned char* data_type        출력될 각 컬럼의 데이터타입을 정의한다
+     *                                          구문 예시) int32:text:int64
+     *                                          예시와 같이 3개의 컬럼으로 정의된다. access 는 void* 로 0, 1, 2 로 들어간다.
+     * @param   unsigned int return_error_code  실행시 발생하는 성공이나 에러에 해당하는 정수를 반환한다.
+     * */
+    CHATTY_STATIC CHATTY_ANY* fetch_request_exec(CHATTY_UCHAR_PTR db_path,
+                                                 CHATTY_UCHAR_PTR query,
+                                                 CHATTY_UCHAR_PTR data_type,
+                                                 CHATTY_ERROR_CODE* return_error_code);
+
+
+
+
+
+
+
     CHATTY_ANY behavior(CHATTY_UCHAR type);
     CHATTY_ANY column(CHATTY_UCHAR_PTR column);
     CHATTY_ANY column(CHATTY_UCHAR_PTR column, CHATTY_UCHAR_PTR value);
 
-    CHATTY_ERROR_CODE exec(CHATTY_FLAG row_proceed = false);
+    CHATTY_ERROR_CODE exec();
+    CHATTY_ERROR_CODE query(CHATTY_CHAR_PTR query);
+    CHATTY_SIZE count();
 
-
-    CHATTY_FLAG initialization_table_connection();
     CHATTY_FLAG fetchall_connection(CHATTY_ANY* group);
     CHATTY_FLAG fetchone_connection(CHATTY_ANY* article);
     CHATTY_STATIC CHATTY_FLAG fetchall_connection_release(CHATTY_ANY* pointer);

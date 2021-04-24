@@ -71,6 +71,8 @@ CHATTY_ANY chatty_embedded_db_master::test_print(CHATTY_CHAR_PTR text) {
 };
 
 CHATTY_ANY chatty_embedded_db_master::__update_query_execution_status() {
+//    if (db_error_msg != nullptr)
+//        sqlite3_free(this->db_error_msg);
     this->db_error_msg = get_error_msg();
     this->db_error_code = sqlite3_errcode(this->selected_db);
 };

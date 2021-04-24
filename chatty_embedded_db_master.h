@@ -42,9 +42,6 @@ protected:
     CHATTY_FLAG is_db_prepare_success;
     CHATTY_FLAG is_db_step_success;
 
-    CHATTY_CHAR_PTR db_error_msg;
-    CHATTY_UCHAR db_error_code; //it is different `latest_error_status` because it doesn't change at connection level works
-
     // it'll change at db connection level proceed
     CHATTY_ERROR_STATUS latest_error_status;
 
@@ -76,6 +73,10 @@ public:
     CHATTY_CHAR_PTR get_error_msg();
 
     CHATTY_ANY test();
+
+    CHATTY_CHAR_PTR db_error_msg;
+    CHATTY_UCHAR db_error_code; //it is different `latest_error_status` because it doesn't change at connection level works
+
 };
 
 

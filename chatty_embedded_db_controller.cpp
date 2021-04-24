@@ -331,56 +331,27 @@ CHATTY_ANY chatty_embedded_db_controller::_generate_non_value_grouping_column() 
 }
 
 
-CHATTY_ERROR_CODE chatty_embedded_db_controller::exec(CHATTY_FLAG row_proceed) {
-    CHATTY_QUERY_BLOCK result_query_stack_block;
-
-    switch((CHATTY_UINT32)this->query_form.request_type) {
-        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_SELECT:
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SELECT, CHATTY_CONST_KEYWORD_SIZE_SELECT);
-            this->_generate_select_column_common();
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_FROM, CHATTY_CONST_KEYWORD_SIZE_FROM);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) this->query_form.target_table_name.value, this->query_form.target_table_name.value_size);
-            this->_generate_where_common();
-            break;
-        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_INSERT:
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_INSERT, CHATTY_CONST_KEYWORD_SIZE_INSERT);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_INTO, CHATTY_CONST_KEYWORD_SIZE_INTO);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) this->query_form.target_table_name.value, this->query_form.target_table_name.value_size);
-            this->_generate_non_value_grouping_column_key();
-            if (query_form.column_part_key.size != 0 && query_form.column_part.size != 0) {
-                this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SPACE_LATTER, CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER);
-                this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_VALUES, CHATTY_CONST_KEYWORD_SIZE_VALUES);
-            };
-            this->_generate_non_value_grouping_column();
-            break;
-        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_UPDATE:
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_UPDATE, CHATTY_CONST_KEYWORD_SIZE_UPDATE);
-            break;
-        case (CHATTY_UINT32)CHATTY_KEYWORD_REQUEST_DELETE:
-            this->__mem_query_add_str((CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_DELETE, CHATTY_CONST_KEYWORD_SIZE_DELETE);
-            break;
-    };
-    this->__mem_query_str_flush(&result_query_stack_block);
+CHATTY_ERROR_CODE chatty_embedded_db_controller::exec() {
+    CHATTY_QUERY_BLOCK _block;
+    this->_generate_query_block(&_block);
 
 #if defined(CHATTY_DO_BUILD_DEBUG)
     std::cout << std::endl;
     std::cout << "[ " << "@@ QUERY @@" << " ]" << '\n';
     std::cout << "# TABLE NAME : " << this->query_form.target_table_name.value << "  sz(" << this->query_form.target_table_name.value_size << ")" << '\n';
     std::cout << "# BEHAVIOR : " << (unsigned int)this->query_form.request_type << '\n';
-    std::cout << "# QUERY : " << result_query_stack_block.value << "#(" << result_query_stack_block.value_size << "/" << 0 << ")" << '\n';
+    std::cout << "# QUERY : " << _block.value << "#(" << _block.value_size << "/" << 0 << ")" << '\n';
     std::cout << std::endl;
 #endif
 
-    if (sqlite3_prepare_v2(this->selected_db, (CHATTY_CHAR_PTR)result_query_stack_block.value, -1, &this->selected_db_handle, nullptr) != CHATTY_STATUS_OK) {
+
+    if (sqlite3_prepare_v2(this->selected_db, (CHATTY_CHAR_PTR)_block.value, -1, &this->selected_db_handle, nullptr) != CHATTY_STATUS_OK) {
         #if defined(CHATTY_DO_BUILD_DEBUG)
         chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"prepare_v2 failed");
         #endif
         this->__update_query_execution_status();
         sqlite3_finalize(this->selected_db_handle);
+        delete _block.value;
         return this->db_error_code;;
     } else {
         switch((CHATTY_UINT32)this->query_form.request_type) {
@@ -391,10 +362,12 @@ CHATTY_ERROR_CODE chatty_embedded_db_controller::exec(CHATTY_FLAG row_proceed) {
 #endif
                     this->__update_query_execution_status();
                     sqlite3_finalize(this->selected_db_handle);
+                    delete _block.value;
                     return this->db_error_code;
                 } else {
                     sqlite3_column_text(this->selected_db_handle,0);
                     sqlite3_finalize(this->selected_db_handle);
+                    delete _block.value;
                     return CHATTY_STATUS_ROW;
                 };
             };
@@ -405,9 +378,12 @@ CHATTY_ERROR_CODE chatty_embedded_db_controller::exec(CHATTY_FLAG row_proceed) {
 #endif
                     this->__update_query_execution_status();
                     sqlite3_finalize(this->selected_db_handle);
+                    delete _block.value;
                     return this->db_error_code;
                 } else {
+                    this->__update_query_execution_status();
                     sqlite3_finalize(this->selected_db_handle);
+                    delete _block.value;
                     return CHATTY_STATUS_OK;
                 };
             };
@@ -458,6 +434,9 @@ CHATTY_ANY chatty_embedded_db_controller::_generate_query_block(CHATTY_ANY *bloc
     rf_block->value = result_query_stack_block.value;
     rf_block->value_size = result_query_stack_block.value_size;
     rf_block->join_keyword = result_query_stack_block.join_keyword;
+
+    std::cout << "-------- QUERY : " << rf_block->value << '\n';
+
 };
 
 
@@ -523,6 +502,8 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection(CHATTY_ANY* group
 
     };
 
+    this->__update_query_execution_status();
+    sqlite3_finalize(this->selected_db_handle);
     delete _block.value;
     return true;
 };
@@ -537,6 +518,7 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchone_connection(CHATTY_ANY *artic
 
     this->_generate_query_block(&_block);
     if (sqlite3_prepare_v2(this->selected_db, (CHATTY_CHAR_PTR)_block.value, -1, &this->selected_db_handle, nullptr) != CHATTY_STATUS_OK) {
+        this->__update_query_execution_status();
         sqlite3_finalize(this->selected_db_handle);
         return false;
     } else {
@@ -550,6 +532,8 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchone_connection(CHATTY_ANY *artic
         };
     };
     delete _block.value;
+    this->__update_query_execution_status();
+    sqlite3_finalize(this->selected_db_handle);
     return false;
 };
 
@@ -578,8 +562,289 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection_release(CHATTY_AN
 }
 
 
-CHATTY_FLAG chatty_embedded_db_controller::initialization_table_connection() {
-    return 0;
+
+CHATTY_ERROR_CODE chatty_embedded_db_controller::query(CHATTY_CHAR_PTR query) {
+
+    if (sqlite3_prepare_v2(this->selected_db, query, -1, &this->selected_db_handle,nullptr) != CHATTY_STATUS_OK) {
+#if defined(CHATTY_DO_BUILD_DEBUG)
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"CHATTY DB INIT PREPARE FAILED");
+#endif
+        sqlite3_finalize(this->selected_db_handle);
+        this->__update_query_execution_status();
+        return CHATTY_STATUS_ERROR;
+    } else {
+        if (sqlite3_step(this->selected_db_handle) != CHATTY_STATUS_OK) {
+#if defined(CHATTY_DO_BUILD_DEBUG)
+            chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"CHATTY DB INIT STEP FAILED");
+#endif
+            sqlite3_finalize(this->selected_db_handle);
+            this->__update_query_execution_status();
+            return CHATTY_STATUS_ERROR;
+        } else {
+            sqlite3_finalize(this->selected_db_handle);
+            this->__update_query_execution_status();
+            return CHATTY_STATUS_OK;
+        };
+    };
+};
+
+CHATTY_SIZE chatty_embedded_db_controller::count() {
+    CHATTY_SIZE result(0);
+    CHATTY_QUERY_BLOCK _block;
+    this->_generate_query_block(&_block);
+
+#if defined(CHATTY_DO_BUILD_DEBUG)
+    chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"CHATTY TABLE COUNT ON");
+#endif
+
+    if (sqlite3_prepare_v2(this->selected_db, _block.value, -1, &this->selected_db_handle,nullptr) != CHATTY_STATUS_OK) {
+#if defined(CHATTY_DO_BUILD_DEBUG)
+        chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"CHATTY DB INIT PREPARE FAILED");
+#endif
+        this->__update_query_execution_status();
+        sqlite3_finalize(this->selected_db_handle);
+
+    } else {
+        std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx : " << _block.value << '\n';
+        sqlite3_step(this->selected_db_handle);
+        int test_cnt = sqlite3_column_int(this->selected_db_handle, 0);
+
+        this->__update_query_execution_status();
+        std::cout << this->db_error_code << " / " << this->db_error_msg << " / " << test_cnt << '\n';
+
+        sqlite3_finalize(this->selected_db_handle);
+    };
+    delete _block.value;
+    return result;
 }
+
+CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
+        CHATTY_UCHAR_PTR db_path,
+        const CHATTY_UCHAR_PTR query,
+        const CHATTY_UCHAR_PTR data_type,
+        CHATTY_ERROR_CODE* return_error_code) {
+
+
+    //return value type definition
+    enum class type {INT32,INT64,TEXT};
+
+    //definition internal function
+    auto ctoi_roll = [](unsigned char* char_txt)->const int {
+        int i(0);
+        int res(0x55555555);
+        while(char_txt[i]) {
+            unsigned int buff_n = (unsigned int)char_txt[i];
+            res += buff_n;
+            res *= (int)(buff_n + i);
+            res &= 0x55555555; //BIT CASING
+            ++i;
+        };
+        return res;
+    };
+
+
+    CHATTY_FLAG skip(false),exed(false);
+
+    CHATTY_DB_LIB sqlite3_structure(nullptr);
+    CHATTY_DB_LIB_STMT sqlite3_statement(nullptr);
+
+    CHATTY_CHAR_PTR err_msg;
+    CHATTY_ERROR_CODE err_code;
+
+    //루프시 공용으로 사용하는 더미-정수
+    CHATTY_SIZE loop_idx(0);
+
+    //각 입력된 타입별 문자 길이 / todo : 메모리를 제거했나요? (y@/n)
+    CHATTY_SIZE* data_type_letter_space = new CHATTY_SIZE[1];
+    //각 입력된 타입별 문자 길이를 입력하기 위한 진행도를 저장하는 정수형 변수. `data_type_cnt` 가 증가할 때 0으로 초기화 된다.
+    CHATTY_SIZE data_type_letter_move_n(0);
+    //마지막 배열의 갯수 확인은 마지막 콜론의 위치에서 `data_type_size` - `data_type_last_colon_at` - 1 으로 합니다
+    CHATTY_SIZE data_type_latest_colon_at(0);
+    //데이터 타입의 갯수를 의미
+    CHATTY_SIZE data_type_cnt(0);
+    //글자수를 의미
+    CHATTY_SIZE data_type_size(0);
+    while(data_type[data_type_size])
+        ++data_type_size;
+
+    for (loop_idx=0;loop_idx<data_type_size;++loop_idx) {
+
+        //colon is numbered `58` by ascii table.
+        if ((CHATTY_UINT32)data_type[loop_idx] == 58) {
+            //콜론 다음으로 오는 문자가 존재하는 (0`널바이트` || 32`스페이스` || 58`콜론` 가 아닌) 경우 확정한다.
+            if ((CHATTY_UINT32)data_type[loop_idx + 1] != 0 && (CHATTY_UINT32)data_type[loop_idx + 1] != 32 && (CHATTY_UINT32)data_type[loop_idx + 1] != 58) {
+                ++data_type_cnt;
+
+                //더 큰 크기의 동적 배열을 준비
+                CHATTY_SIZE* new_data_type_letter_space = new CHATTY_SIZE[data_type_cnt + 1];
+
+                //값이 있으면 기존에 있던 값을 옮기기
+                if (data_type_cnt-1 != 0) {
+                    CHATTY_SIZE loop_in_idx(0);
+                    for(loop_in_idx=0;loop_in_idx<data_type_cnt;++loop_in_idx) {
+                        new_data_type_letter_space[loop_in_idx] = data_type_letter_space[loop_in_idx];
+                    };
+
+
+                    //계산상 콜론까지 카운트되니 이후부턴 콜론만큼을 제외한 크기를 계산하기 위해
+                    --data_type_letter_move_n;
+                };
+
+                //새 항목을 입력
+                new_data_type_letter_space[data_type_cnt-1] = data_type_letter_move_n;
+
+                //delete array and children also for memory move.
+                delete[] data_type_letter_space;
+
+                //memory move
+                data_type_letter_space = new_data_type_letter_space;
+
+                //reset move_n
+                data_type_letter_move_n = 0;
+
+                //set latest colon at
+                data_type_latest_colon_at = loop_idx;
+            };
+        };
+        ++data_type_letter_move_n;
+    };
+
+    //debug : 개발시 출력용
+    std::cout << "data_type str size : " << data_type_size << '\n';
+    std::cout << "data_type cnt : " << data_type_cnt << '\n';
+    std::cout << "data_type last thing size expected : " << data_type_size - data_type_latest_colon_at - 1 << '\n';
+
+    //마지막 요소 삽입
+    ++data_type_cnt;
+    CHATTY_SIZE extra_size(0);
+    CHATTY_SIZE* new_data_type_letter_space_for_last = new CHATTY_SIZE[data_type_cnt];
+
+    //value copy
+    for (loop_idx = 0; loop_idx < data_type_cnt; ++loop_idx) {
+        new_data_type_letter_space_for_last[loop_idx] = data_type_letter_space[loop_idx];
+    };
+
+    //put at last
+    if((CHATTY_INT32)data_type[data_type_size-1] == 58) {
+        CHATTY_SIZE dummy_idx(0);
+        while(true) {
+            CHATTY_UINT32 buffer_n = (CHATTY_INT32)data_type[data_type_size + dummy_idx - 1];
+            std::cout << buffer_n << '\n';
+            if (buffer_n == 58) {
+                ++extra_size;
+            } else {
+                break;
+            };
+            ++dummy_idx;
+        };
+    };
+
+    new_data_type_letter_space_for_last[data_type_cnt-1] = data_type_size - data_type_latest_colon_at - extra_size - 1;
+
+    //delete array and children also for memory move.
+    delete[] data_type_letter_space;
+
+    //memory copy for last
+    data_type_letter_space = new_data_type_letter_space_for_last;
+
+    //debug : 메모리 확인용 출력
+    for(loop_idx=0;loop_idx<data_type_cnt;++loop_idx)
+        std::cout << "- - - - ready letter space : " << data_type_letter_space[loop_idx] << '\n';
+
+    //debug : 타입 비교
+    //`data_type`에서  data_type_letter_space[n]만큼 읽고 1개 건너뛰고 다시 하나 읽는 방식으로 끝까지 감.
+    CHATTY_SIZE stack(0);
+    for(loop_idx=0;loop_idx<data_type_cnt;++loop_idx) {
+        CHATTY_SIZE idx(0);
+        CHATTY_SIZE uchar_size = sizeof(CHATTY_UCHAR);
+
+        CHATTY_SIZE letter_space = data_type_letter_space[loop_idx];
+        CHATTY_UCHAR_PTR buff_for_var = (CHATTY_UCHAR_PTR)malloc(letter_space+1);
+
+        for(idx=0;idx<letter_space+1;++idx) {
+            buff_for_var[idx] = (CHATTY_UCHAR) 0;
+        };
+
+        memcpy(buff_for_var, data_type + stack, letter_space * uchar_size);
+        stack = stack + letter_space + 1;
+
+        const CHATTY_UINT32 buff_for_compare  = ctoi_roll((CHATTY_UCHAR_PTR)buff_for_var);
+        const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
+        const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
+        const CHATTY_UINT32 _type_text        = ctoi_roll((CHATTY_UCHAR_PTR)"text");
+
+        if (buff_for_compare == _type_int) {
+            printf("%s\n", "(Notice) be setting a column to `int32`");
+        } else if(buff_for_compare == _type_int64) {
+            printf("%s\n", "(Notice) be setting a column to `int64`");
+        } else if(buff_for_compare == _type_text) {
+            printf("%s\n", "(Notice) be setting a column to `text`");
+        } else {
+            printf("%s\n", "(Notice) be setting a column to `UNDEFINED`");
+        };
+
+    };
+
+    if (sqlite3_open((CHATTY_CHAR_PTR)db_path, &sqlite3_structure) != CHATTY_STATUS_OK) {
+        err_msg     = (CHATTY_CHAR_PTR)sqlite3_errmsg(sqlite3_structure);
+        err_code    = (CHATTY_ERROR_CODE) sqlite3_errcode(sqlite3_structure);
+        printf("(Alert) Error at db opening %d - %s\n", err_code, err_msg);
+        skip = true;
+    } else {
+        printf("%s\n", "(Success) db open");
+    };
+
+    if (sqlite3_prepare_v2(sqlite3_structure, (CHATTY_CHAR_PTR)query, -1, &sqlite3_statement, nullptr) != CHATTY_STATUS_OK && !skip) {
+        err_msg     = (CHATTY_CHAR_PTR)sqlite3_errmsg(sqlite3_structure);
+        err_code    = (CHATTY_ERROR_CODE) sqlite3_errcode(sqlite3_structure);
+        printf("(Alert) Error at query preparing %d - %s\n", err_code, err_msg);
+        sqlite3_reset(sqlite3_statement);
+        sqlite3_close(sqlite3_structure);
+        skip = true;
+    } else {
+        printf("%s\n", "(Success) prepare skipped");
+    };
+
+    CHATTY_ERROR_CODE step_result(0);
+    if (!skip) {
+        step_result = sqlite3_step(sqlite3_statement);
+        exed = true;
+        switch(step_result) {
+            case CHATTY_STATUS_OK:
+                printf("%s (%d)\n", "(Notice) request is ok", step_result);
+                break;
+            case CHATTY_STATUS_DONE:
+                printf("%s (%d)\n", "(Notice) statement is done", step_result);
+                break;
+            case CHATTY_STATUS_ROW:
+                printf("%s (%d)\n", "(Notice) got a rows", step_result);
+                break;
+            default:
+                printf("%s (%d)\n", "(Notice) is not defined exception", step_result);
+                break;
+        }
+    } else {
+        printf("%s\n", "(Success) step skipped");
+    };
+
+    if (exed) {
+        printf("%s\n", "(Notice) exed put on reference to status.");
+        *return_error_code = (CHATTY_ERROR_CODE) sqlite3_errcode(sqlite3_structure);
+    } else {
+        *return_error_code = CHATTY_STATUS_ERROR;
+    };
+
+    //garbage collect
+    CHATTY_UINT32 stat_reset(0),stat_finalize(0),stat_close(0);
+    stat_reset      = sqlite3_reset(sqlite3_statement);
+    stat_finalize   = sqlite3_finalize(sqlite3_statement);
+    stat_close      = sqlite3_close(sqlite3_structure);
+
+    //print closing
+    printf("(Notice) ** reset (%d), finalize (%d), close (%d)\n", stat_reset, stat_finalize, stat_close);
+
+    //returns condition
+    return nullptr;
+};
 
 

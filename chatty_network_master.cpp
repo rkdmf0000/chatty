@@ -63,6 +63,7 @@ CHATTY_ANY chatty_network_master::open(CHATTY_UINT32 port) {
         return;
     };
 
+
     CHATTY_CHAR msg[] = "Hello this is server message!\r\n";
     write(clnt_sock, msg, sizeof(msg));
 

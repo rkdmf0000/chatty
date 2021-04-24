@@ -67,6 +67,7 @@ typedef CHATTY_UCHAR CHATTY_QUOTES_TYPE;
 
 /**
  * 표현자(behavior) 의 크기를 정의 (null byte 를 제외한 크기)
+ * LETTER 를 LATTER 라고 잘못 썼다ㅋㅋ 돌리기에 너무 늦음
  * */
 #define CHATTY_CONST_KEYWORD_NULL 0
 
@@ -123,6 +124,9 @@ typedef CHATTY_UCHAR CHATTY_QUOTES_TYPE;
 
 #define CHATTY_CONST_KEYWORD_SPACE_LATTER " "
 #define CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER 2
+
+#define CHATTY_CONST_KEYWORD_COLON_LATTER ":"
+#define CHATTY_CONST_KEYWORD_SIZE_COLON_LATTER 2
 
 /**
  * 공백크기 정의
