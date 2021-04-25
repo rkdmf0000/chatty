@@ -868,12 +868,20 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
                             buff_for_var[idx] = (CHATTY_UCHAR) 0;
                         };
 
-                        memcpy(buff_for_var, data_type + stack, letter_space * uchar_size);
-                        stack = stack + letter_space + 1;
-
                         //memory-on : 메모리를 제거했나요? (y@/n)
                         //영어 대문자를 소문자로 변경
-                        CHATTY_UCHAR_PTR buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space+1);
+                        CHATTY_UCHAR_PTR buff_low_scaled_var = nullptr;
+
+                        //단수의 값인 경우
+                        if (data_type_cnt == 1) {
+                            memcpy(buff_for_var, data_type + stack, (letter_space * uchar_size) + 2 );
+                            buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space + 2);
+                            stack = stack + letter_space + 1;
+                        } else {
+                            memcpy(buff_for_var, data_type + stack, letter_space * uchar_size);
+                            buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space+1);
+                            stack = stack + letter_space + 1;
+                        };
 
                         //쉬운 비교를 위해 단순구조 해시로 정수 변경후 비교
                         const CHATTY_UINT32 buff_for_compare  = ctoi_roll((CHATTY_UCHAR_PTR)buff_low_scaled_var);
@@ -943,12 +951,20 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
                                 buff_for_var[idx] = (CHATTY_UCHAR) 0;
                             };
 
-                            memcpy(buff_for_var, data_type + stack_nd, letter_space * uchar_size);
-                            stack_nd = stack_nd + letter_space + 1;
-
                             //memory-on : 메모리를 제거했나요? (y@/n)
                             //영어 대문자를 소문자로 변경
-                            CHATTY_UCHAR_PTR buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space+1);
+                            CHATTY_UCHAR_PTR buff_low_scaled_var = nullptr;
+
+                            //단수의 값인 경우
+                            if (data_type_cnt == 1) {
+                                memcpy(buff_for_var, data_type + stack_nd, (letter_space * uchar_size) + 2 );
+                                buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space + 2);
+                                stack_nd = stack_nd + letter_space + 1;
+                            } else {
+                                memcpy(buff_for_var, data_type + stack_nd, letter_space * uchar_size);
+                                buff_low_scaled_var = lowscale_up_alphabet(buff_for_var, letter_space+1);
+                                stack_nd = stack_nd + letter_space + 1;
+                            };
 
                             //쉬운 비교를 위해 단순구조 해시로 정수 변경후 비교
                             const CHATTY_UINT32 buff_for_compare  = ctoi_roll((CHATTY_UCHAR_PTR)buff_low_scaled_var);
@@ -1040,7 +1056,7 @@ CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_DB_F
     for(i=0;i<addr->size;++i) {
         void** buffer_row = (void**)addr->value[i];
         for(ii=0;ii<addr->column_cnt;++ii) {
-            void* buffer_column_value = buffer_row[ii];
+            void* buffer_column_value = (void*)buffer_row[ii];
             std::cout << "- - - - - - - - column delete : " << buffer_column_value << '\n';
             delete buffer_column_value;
         };

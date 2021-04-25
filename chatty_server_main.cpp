@@ -10,24 +10,20 @@ int main() {
 
     CHATTY_ANY* query_result(nullptr);
     CHATTY_ERROR_CODE ref_code(0);
-    //SELECT * FROM CHATTY_CONNECTION
-    //INSERT INTO CHATTY_CONNECTION (id, latest_connect_date, is_online) VALUES (7,5455612, 1)
+
     query_result = chatty_embedded_db_controller::fetch_request_exec(
             (CHATTY_UCHAR_PTR)CHATTY_DB_NAME,
-            (CHATTY_UCHAR_PTR)"SELECT * FROM CHATTY_CONNECTION",
-            (CHATTY_UCHAR_PTR)"INT32:int32:int64",
+            (CHATTY_UCHAR_PTR)"SELECT id,id,latest_connect_date FROM CHATTY_CONNECTION",
+            (CHATTY_UCHAR_PTR)"int64:int64:int64",
             &ref_code
             );
-
-    std::cout << "fetch_request_exec returned value-addr : 0 to " << query_result << '\n';
-    std::cout << "fetch_request_exec returned status : " << ref_code << '\n';
 
     //debug : 로우 찍히는지 테스트
     CHATTY_DB_FETCH_RESULT* _dummy_test_query_result = (CHATTY_DB_FETCH_RESULT*)query_result;
     for(int idx=0;idx<_dummy_test_query_result->size;++idx) {
         void** buffer_row = (void**)_dummy_test_query_result->value[idx];
-        int* _column_idx = (int*)buffer_row[0];
-        std::cout << "idx : " << *_column_idx << '\n';
+        int* _column_id = (int*)buffer_row[0];
+        std::cout << "id : " << *_column_id << '\n';
     };
 
     //메로리 해제
