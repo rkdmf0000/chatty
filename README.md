@@ -38,10 +38,81 @@ sql query helper 만들어서 쓰려고 하는중
     //메로리 해제
     chatty_embedded_db_controller::fetch_request_exec_release(query_result);
 
-
 ```
 
+```console
+print_library_version : 3.35.4
+print_version : 0.3.0.1
+(Success) DB open
+(Success) prepare skipped
+(QUERY) got a rows (100)
+(Notice) going on `row` refining proceeds
+- - row count (st) : 1
+(Processing-st) be setting a (row : 1) 0 column to `int32` - 0x55bdad32b2f0
+(Processing-st) be setting a (row : 1) 1 column to `int32` - 0x55bdad32b660
+(Processing-st) be setting a (row : 1) 2 column to `int64` - 0x55bdad32b770
+- - - - 0x55bdad32b400 row is now made (st)
 
+
+- - row count (nd) : 2
+- - - - 0x55bdad32b400 row is now copied! (nd)
+(Processing-nd) be setting a (row : 2) 0 column to `int32` - 0x55bdad32b7d0
+(Processing-nd) be setting a (row : 2) 1 column to `int32` - 0x55bdad32b7f0
+(Processing-nd) be setting a (row : 2) 2 column to `int64` - 0x55bdad32b810
+- - - - 0x55bdad32b3e0 row is now made (nd)
+
+
+- - row count (nd) : 3
+- - - - 0x55bdad32b400 row is now copied! (nd)
+- - - - 0x55bdad32b3e0 row is now copied! (nd)
+(Processing-nd) be setting a (row : 3) 0 column to `int32` - 0x55bdad32b850
+(Processing-nd) be setting a (row : 3) 1 column to `int32` - 0x55bdad32b870
+(Processing-nd) be setting a (row : 3) 2 column to `int64` - 0x55bdad32b890
+- - - - 0x55bdad32b7b0 row is now made (nd)
+
+
+- - row count (nd) : 4
+- - - - 0x55bdad32b400 row is now copied! (nd)
+- - - - 0x55bdad32b3e0 row is now copied! (nd)
+- - - - 0x55bdad32b7b0 row is now copied! (nd)
+(Processing-nd) be setting a (row : 4) 0 column to `int32` - 0x55bdad32b8e0
+(Processing-nd) be setting a (row : 4) 1 column to `int32` - 0x55bdad32b900
+(Processing-nd) be setting a (row : 4) 2 column to `int64` - 0x55bdad32b920
+- - - - 0x55bdad32b350 row is now made (nd)
+
+
+(Notice) exed put on reference to status.
+(Notice) ** reset (0), finalize (0), close (0)
+(Success) row returned
+fetch_request_exec returned value-addr : 0 to 0x55bdad32cb60
+fetch_request_exec returned status : 101
+idx : 1
+idx : 2
+idx : 3
+idx : 4
+(Notice) it's on type casting to `CHATTY_DB_FETCH_RESULT*` by language syntax overload for release-ment process
+(Notice) release-ment on start
+(Info) column count : 3 / row count : 4
+- - - - - - - - column delete : 0x55bdad32b2f0
+- - - - - - - - column delete : 0x55bdad32b660
+- - - - - - - - column delete : 0x55bdad32b770
+- - - - - - row delete : 0x55bdad32b400
+- - - - - - - - column delete : 0x55bdad32b7d0
+- - - - - - - - column delete : 0x55bdad32b7f0
+- - - - - - - - column delete : 0x55bdad32b810
+- - - - - - row delete : 0x55bdad32b3e0
+- - - - - - - - column delete : 0x55bdad32b850
+- - - - - - - - column delete : 0x55bdad32b870
+- - - - - - - - column delete : 0x55bdad32b890
+- - - - - - row delete : 0x55bdad32b7b0
+- - - - - - - - column delete : 0x55bdad32b8e0
+- - - - - - - - column delete : 0x55bdad32b900
+- - - - - - - - column delete : 0x55bdad32b920
+- - - - - - row delete : 0x55bdad32b350
+- - - - value delete : 0x55bdad32b8b0
+- - self delete : 0x55bdad32cb60
+
+```
 
 
 
