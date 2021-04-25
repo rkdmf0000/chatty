@@ -239,5 +239,10 @@ struct CHATTY_DB_COLUMN_TOWER_STATUS_GROUP_COLLECTION {
     CHATTY_SIZE* size = nullptr;
 };
 
+struct CHATTY_DB_FETCH_RESULT {
+    CHATTY_ANY** value = nullptr;
+    CHATTY_SIZE size = 0;
+    CHATTY_SIZE column_cnt = 0;
+};
 
 #endif //CHATTY_CHATTY_EMBEDDED_DB_TYPE_DEFS_H

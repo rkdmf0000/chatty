@@ -127,7 +127,7 @@ CHATTY_ANY chatty_embedded_db_master::__mem_query_str_flush(CHATTY_ANY *ref) {
     delete this->query_str, this->query_str_size;
 };
 
-// TODO : 이거 다른 함수로 가면 값을 잃음
+// note : 이거 다른 함수로 가면 값을 잃음
 
 CHATTY_ANY chatty_embedded_db_master::__mem_query_box_insert(CHATTY_ANY* block, CHATTY_ANY* ref) {
     CHATTY_SIZE index(0);

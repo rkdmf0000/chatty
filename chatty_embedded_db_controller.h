@@ -43,9 +43,15 @@ public:
                                                  CHATTY_UCHAR_PTR query,
                                                  CHATTY_UCHAR_PTR data_type,
                                                  CHATTY_ERROR_CODE* return_error_code);
-
-
-
+    /**
+     * @title   : fetch_request_exec_release
+     * @desc    : fetch_request_exec - CHATTY_DB_FETCH_RESULT structure 를 해제하는 함수입니다.
+     *            옳바른 구조체의 경우 해제에 필요한 데이터는 다 안에 포함되있다.
+     * -----------------------------
+     * @param   unsignedCHATTY_DB_FETCH_RESULT* addr    해제할 변수의 주소
+     * */
+    CHATTY_STATIC CHATTY_ANY fetch_request_exec_release(CHATTY_ANY* addr);
+    CHATTY_STATIC CHATTY_ANY fetch_request_exec_release(CHATTY_DB_FETCH_RESULT* addr);
 
 
 

@@ -24,11 +24,15 @@ set(${PROJECT_DEFS_PREFIX}DB_NAME "chatty_database_storage")        # CHANGE THI
 set(${PROJECT_DEFS_PREFIX}DB_EXTENSION ".db")
 
 
-
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 1)
+################################
+# VERSION CONTROL!!!!!!!!!!!!!!!
+################################
+set(PROJECT_VERSION_MAJOR 0) #Change it when something big one open
+set(PROJECT_VERSION_MINOR 3)
 set(PROJECT_VERSION_PATCH 0)
-set(PROJECT_VERSION_TWEAK 5)
+set(PROJECT_VERSION_TWEAK 1)
+################################
+
 
 set(PROJECT_FILE_HEADER
         "chatty_network_master.h"
