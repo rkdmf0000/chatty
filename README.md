@@ -12,6 +12,11 @@ sql query helper 만들어서 쓰려고 하는중
 
 
 ## 20210426 on proc - 쿼리 보내고 메모리 릴리즈하는 부붐까지 완성
+
+`query`파라미터에 `SELECT id,id,latest_connect_date FROM CHATTY_CONNECTION` 구문을 입력하는 경우
+`id,id,latest_connect_date` 3개의 컬럼에 맞게
+`data_type` 파라미터에 `int64:int64:int64` 3개를 입력해줘야 에러가 안난다
+
 ```c++
     CHATTY_ANY* query_result(nullptr);
     CHATTY_ERROR_CODE ref_code(0);
