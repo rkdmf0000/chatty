@@ -11,6 +11,41 @@
 sql query helper 만들어서 쓰려고 하는중  
 
 
+## 20210426 on proc - 쿼리 보내고 메모리 릴리즈하는 부붐까지 완성
+```c++
+    CHATTY_ANY* query_result(nullptr);
+    CHATTY_ERROR_CODE ref_code(0);
+    //SELECT * FROM CHATTY_CONNECTION
+    //INSERT INTO CHATTY_CONNECTION (id, latest_connect_date, is_online) VALUES (7,5455612, 1)
+    query_result = chatty_embedded_db_controller::fetch_request_exec(
+            (CHATTY_UCHAR_PTR)CHATTY_DB_NAME,
+            (CHATTY_UCHAR_PTR)"SELECT * FROM CHATTY_CONNECTION",
+            (CHATTY_UCHAR_PTR)"INT32:int32:int64",
+            &ref_code
+            );
+
+    std::cout << "fetch_request_exec returned value-addr : 0 to " << query_result << '\n';
+    std::cout << "fetch_request_exec returned status : " << ref_code << '\n';
+
+    //debug : 로우 찍히는지 테스트
+    CHATTY_DB_FETCH_RESULT* _dummy_test_query_result = (CHATTY_DB_FETCH_RESULT*)query_result;
+    for(int idx=0;idx<_dummy_test_query_result->size;++idx) {
+        void** buffer_row = (void**)_dummy_test_query_result->value[idx];
+        int* _column_idx = (int*)buffer_row[0];
+        std::cout << "idx : " << *_column_idx << '\n';
+    };
+
+    //메로리 해제
+    chatty_embedded_db_controller::fetch_request_exec_release(query_result);
+
+
+```
+
+
+
+
+
+
 ## 20210424 on proc
 ```c++
 int main() {
