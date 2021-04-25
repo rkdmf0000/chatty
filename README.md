@@ -1,4 +1,4 @@
-# chatty
+# chatty 시부렁 에러있네
 
 날려먹는거 방지용
 
@@ -9,6 +9,117 @@
 내부적으로 sqlite3 사용하는디
 
 sql query helper 만들어서 쓰려고 하는중  
+
+
+## 20210426 on proc - 쿼리 보내고 메모리 릴리즈하는 부붐까지 완성
+
+`query`파라미터에 `SELECT id,id,latest_connect_date FROM CHATTY_CONNECTION` 구문을 입력하는 경우
+`id,id,latest_connect_date` 3개의 컬럼에 맞게
+`data_type` 파라미터에 `int64:int64:int64` 3개를 입력해줘야 에러가 안난다
+
+```c++
+    CHATTY_ANY* query_result(nullptr);
+    CHATTY_ERROR_CODE ref_code(0);
+    //SELECT * FROM CHATTY_CONNECTION
+    //INSERT INTO CHATTY_CONNECTION (id, latest_connect_date, is_online) VALUES (7,5455612, 1)
+    query_result = chatty_embedded_db_controller::fetch_request_exec(
+            (CHATTY_UCHAR_PTR)CHATTY_DB_NAME,
+            (CHATTY_UCHAR_PTR)"SELECT * FROM CHATTY_CONNECTION",
+            (CHATTY_UCHAR_PTR)"INT32:int32:int64",
+            &ref_code
+            );
+
+    std::cout << "fetch_request_exec returned value-addr : 0 to " << query_result << '\n';
+    std::cout << "fetch_request_exec returned status : " << ref_code << '\n';
+
+    //debug : 로우 찍히는지 테스트
+    CHATTY_DB_FETCH_RESULT* _dummy_test_query_result = (CHATTY_DB_FETCH_RESULT*)query_result;
+    for(int idx=0;idx<_dummy_test_query_result->size;++idx) {
+        void** buffer_row = (void**)_dummy_test_query_result->value[idx];
+        int* _column_idx = (int*)buffer_row[0];
+        std::cout << "idx : " << *_column_idx << '\n';
+    };
+
+    //메로리 해제
+    chatty_embedded_db_controller::fetch_request_exec_release(query_result);
+
+```
+
+```console
+print_library_version : 3.35.4
+print_version : 0.3.0.1
+(Success) DB open
+(Success) prepare skipped
+(QUERY) got a rows (100)
+(Notice) going on `row` refining proceeds
+- - row count (st) : 1
+(Processing-st) be setting a (row : 1) 0 column to `int32` - 0x55bdad32b2f0
+(Processing-st) be setting a (row : 1) 1 column to `int32` - 0x55bdad32b660
+(Processing-st) be setting a (row : 1) 2 column to `int64` - 0x55bdad32b770
+- - - - 0x55bdad32b400 row is now made (st)
+
+
+- - row count (nd) : 2
+- - - - 0x55bdad32b400 row is now copied! (nd)
+(Processing-nd) be setting a (row : 2) 0 column to `int32` - 0x55bdad32b7d0
+(Processing-nd) be setting a (row : 2) 1 column to `int32` - 0x55bdad32b7f0
+(Processing-nd) be setting a (row : 2) 2 column to `int64` - 0x55bdad32b810
+- - - - 0x55bdad32b3e0 row is now made (nd)
+
+
+- - row count (nd) : 3
+- - - - 0x55bdad32b400 row is now copied! (nd)
+- - - - 0x55bdad32b3e0 row is now copied! (nd)
+(Processing-nd) be setting a (row : 3) 0 column to `int32` - 0x55bdad32b850
+(Processing-nd) be setting a (row : 3) 1 column to `int32` - 0x55bdad32b870
+(Processing-nd) be setting a (row : 3) 2 column to `int64` - 0x55bdad32b890
+- - - - 0x55bdad32b7b0 row is now made (nd)
+
+
+- - row count (nd) : 4
+- - - - 0x55bdad32b400 row is now copied! (nd)
+- - - - 0x55bdad32b3e0 row is now copied! (nd)
+- - - - 0x55bdad32b7b0 row is now copied! (nd)
+(Processing-nd) be setting a (row : 4) 0 column to `int32` - 0x55bdad32b8e0
+(Processing-nd) be setting a (row : 4) 1 column to `int32` - 0x55bdad32b900
+(Processing-nd) be setting a (row : 4) 2 column to `int64` - 0x55bdad32b920
+- - - - 0x55bdad32b350 row is now made (nd)
+
+
+(Notice) exed put on reference to status.
+(Notice) ** reset (0), finalize (0), close (0)
+(Success) row returned
+fetch_request_exec returned value-addr : 0 to 0x55bdad32cb60
+fetch_request_exec returned status : 101
+idx : 1
+idx : 2
+idx : 3
+idx : 4
+(Notice) it's on type casting to `CHATTY_DB_FETCH_RESULT*` by language syntax overload for release-ment process
+(Notice) release-ment on start
+(Info) column count : 3 / row count : 4
+- - - - - - - - column delete : 0x55bdad32b2f0
+- - - - - - - - column delete : 0x55bdad32b660
+- - - - - - - - column delete : 0x55bdad32b770
+- - - - - - row delete : 0x55bdad32b400
+- - - - - - - - column delete : 0x55bdad32b7d0
+- - - - - - - - column delete : 0x55bdad32b7f0
+- - - - - - - - column delete : 0x55bdad32b810
+- - - - - - row delete : 0x55bdad32b3e0
+- - - - - - - - column delete : 0x55bdad32b850
+- - - - - - - - column delete : 0x55bdad32b870
+- - - - - - - - column delete : 0x55bdad32b890
+- - - - - - row delete : 0x55bdad32b7b0
+- - - - - - - - column delete : 0x55bdad32b8e0
+- - - - - - - - column delete : 0x55bdad32b900
+- - - - - - - - column delete : 0x55bdad32b920
+- - - - - - row delete : 0x55bdad32b350
+- - - - value delete : 0x55bdad32b8b0
+- - self delete : 0x55bdad32cb60
+
+```
+
+
 
 
 ## 20210424 on proc
