@@ -28,9 +28,9 @@ set(${PROJECT_DEFS_PREFIX}DB_EXTENSION ".db")
 # VERSION CONTROL!!!!!!!!!!!!!!!
 ################################
 set(PROJECT_VERSION_MAJOR 0) #Change it when something big one open
-set(PROJECT_VERSION_MINOR 3)
+set(PROJECT_VERSION_MINOR 4)
 set(PROJECT_VERSION_PATCH 0)
-set(PROJECT_VERSION_TWEAK 1)
+set(PROJECT_VERSION_TWEAK 0)
 ################################
 
 

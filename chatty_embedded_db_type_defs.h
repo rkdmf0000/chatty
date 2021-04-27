@@ -2,6 +2,10 @@
 // Created by my_fl on 2021-02-17.
 //
 
+#include <iostream>
+#include <stdio.h>
+
+
 #ifndef CHATTY_CHATTY_EMBEDDED_DB_TYPE_DEFS_H
 #define CHATTY_CHATTY_EMBEDDED_DB_TYPE_DEFS_H
 
@@ -259,13 +263,13 @@ struct CHATTY_DB_COLUMN_TOWER_STATUS_GROUP_COLLECTION {
     CHATTY_SIZE* size = nullptr;
 };
 
+
 struct CHATTY_DB_FETCH_RESULT {
     //생성자
-    CHATTY_DB_FETCH_RESULT(CHATTY_SIZE cnt) {
-        _defined_value = cnt;
-    };
+    CHATTY_DB_FETCH_RESULT(CHATTY_SIZE cnt) : _defined_value{cnt} {};
     //소멸자
     ~CHATTY_DB_FETCH_RESULT() {
+        std::cout << "→ deleted _defined_type and column_type" << '\n';
         delete[] _defined_type;
         delete[] _defined_column_type;
     };

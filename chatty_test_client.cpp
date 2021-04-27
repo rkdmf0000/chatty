@@ -23,14 +23,18 @@ int main(int argc, char* argv[]){
         std::cout << "client connection error occurred!" << '\n';
         abort();
     };
+//    auto* send_data = (unsigned char *) "hello!";
+//    recv(clnt_sock, message, sizeof(message)-1, MSG_DONTWAIT);
+//    send(clnt_sock, send_data, 4, MSG_DONTWAIT);
+//    if (read(clnt_sock, message, sizeof(message)-1) == -1) {
+//        std::cout << "client read error occurred!" << '\n';
+//        abort();
+//    };
 
-    if (read(clnt_sock, message, sizeof(message)-1) == -1) {
-        std::cout << "client read error occurred!" << '\n';
-        abort();
-    };
+//    std::cout << "Message received!" << '\n';
+//    std::cout << "D : " << message << '\n';
 
-    std::cout << "Message received!" << '\n';
-    std::cout << "D : " << message << '\n';
+
 
     close(clnt_sock);
     return 0;

@@ -797,184 +797,183 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
             delete _copied_select_lowscaled;
         };
 
+        if (is_select_syntax) {
+            printf("%s\n", "(Notice) finding from keyword");
 
+            //memory-on : 제어필요
+            CHATTY_UCHAR_PTR _keyword_from_lowscaled(nullptr);
+            _keyword_from_lowscaled = lowscale_up_alphabet(_keyword_from, CHATTY_CONST_KEYWORD_SIZE_FROM - 1);
 
-        printf("%s\n", "(Notice) finding from keyword");
+            //from 키워드가 어디서 시작하는지
+            CHATTY_SIZE _from_at(0);
 
-        //memory-on : 제어필요
-        CHATTY_UCHAR_PTR _keyword_from_lowscaled(nullptr);
-        _keyword_from_lowscaled = lowscale_up_alphabet(_keyword_from, CHATTY_CONST_KEYWORD_SIZE_FROM - 1);
+            //쿼리 루프
+            for (loop_idx=0;loop_idx<query_size;++loop_idx) {
 
-        //from 키워드가 어디서 시작하는지
-        CHATTY_SIZE _from_at(0);
+                //memory-on : 버퍼 소문자 힙 ㅈㄴ 생성
+                CHATTY_UCHAR_PTR _buffer_low_scaled_a = lowscale_up_alphabet(&query[loop_idx], 1);
+                CHATTY_UCHAR_PTR _buffer_low_scaled_b = lowscale_up_alphabet(&query[loop_idx+1], 1);
+                CHATTY_UCHAR_PTR _buffer_low_scaled_c = lowscale_up_alphabet(&query[loop_idx+2], 1);
+                CHATTY_UCHAR_PTR _buffer_low_scaled_d = lowscale_up_alphabet(&query[loop_idx+3], 1);
 
-        //쿼리 루프
-        for (loop_idx=0;loop_idx<query_size;++loop_idx) {
+                if (loop_idx % 8 == 0 && loop_idx != 0)
+                    printf("\r\n");
 
+                printf("-%c%c%c%c-", *_buffer_low_scaled_a, *_buffer_low_scaled_b, *_buffer_low_scaled_c, *_buffer_low_scaled_d);
 
-
-            //memory-on : 버퍼 소문자 힙 ㅈㄴ 생성
-            CHATTY_UCHAR_PTR _buffer_low_scaled_a = lowscale_up_alphabet(&query[loop_idx], 1);
-            CHATTY_UCHAR_PTR _buffer_low_scaled_b = lowscale_up_alphabet(&query[loop_idx+1], 1);
-            CHATTY_UCHAR_PTR _buffer_low_scaled_c = lowscale_up_alphabet(&query[loop_idx+2], 1);
-            CHATTY_UCHAR_PTR _buffer_low_scaled_d = lowscale_up_alphabet(&query[loop_idx+3], 1);
-
-            if (loop_idx % 8 == 0 && loop_idx != 0)
-                printf("\r\n");
-
-            printf("-%c%c%c%c-", *_buffer_low_scaled_a, *_buffer_low_scaled_b, *_buffer_low_scaled_c, *_buffer_low_scaled_d);
-
-            if ((CHATTY_UINT32)*_buffer_low_scaled_a == (CHATTY_UINT32)_keyword_from_lowscaled[0]
-                && (CHATTY_UINT32)*_buffer_low_scaled_b == (CHATTY_UINT32)_keyword_from_lowscaled[1]
-                && (CHATTY_UINT32)*_buffer_low_scaled_c == (CHATTY_UINT32)_keyword_from_lowscaled[2]
-                && (CHATTY_UINT32)*_buffer_low_scaled_d == (CHATTY_UINT32)_keyword_from_lowscaled[3]
-            ) {
-                printf("\n%s\n", "(Notice) from keyword detected!");
-                _from_at = loop_idx;
-            };
-
-            //memory-off : 버퍼 소문자들 처리 완료
-            delete _buffer_low_scaled_a;
-            delete _buffer_low_scaled_b;
-            delete _buffer_low_scaled_c;
-            delete _buffer_low_scaled_d;
-
-            if (query_size - (CHATTY_CONST_KEYWORD_SIZE_FROM - 1) <= loop_idx) {
-                std::cout << std::endl;
-                printf("%s\n", "(Alert) from keyword not exists. that will occurred error!");
-                break;
-            };
-
-            if (_from_at != 0)
-                break;
-
-        };
-
-        //memory-off : 처리 완료
-        delete _keyword_from_lowscaled;
-
-        //데이터 타입 루프
-        for (loop_idx=0;loop_idx<data_type_size;++loop_idx) {
-
-            //colon is numbered `58` by ascii table.
-            if ((CHATTY_UINT32)data_type[loop_idx] == 58) {
-                //콜론 다음으로 오는 문자가 존재하는 (0`널바이트` || 32`스페이스` || 58`콜론` 가 아닌) 경우 확정한다.
-                if ((CHATTY_UINT32)data_type[loop_idx + 1] != 0 && (CHATTY_UINT32)data_type[loop_idx + 1] != 32 && (CHATTY_UINT32)data_type[loop_idx + 1] != 58) {
-                    ++data_type_cnt;
-
-                    //더 큰 크기의 동적 배열을 준비
-                    CHATTY_SIZE* new_data_type_letter_space = new CHATTY_SIZE[data_type_cnt + 1];
-
-                    //값이 있으면 기존에 있던 값을 옮기기
-                    if (data_type_cnt-1 != 0) {
-                        CHATTY_SIZE loop_in_idx(0);
-                        for(loop_in_idx=0;loop_in_idx<data_type_cnt;++loop_in_idx) {
-                            new_data_type_letter_space[loop_in_idx] = data_type_letter_space[loop_in_idx];
-                        };
-
-                        //계산상 콜론까지 카운트되니 이후부턴 콜론만큼을 제외한 크기를 계산하기 위해
-                        --data_type_letter_move_n;
-                    };
-
-                    //새 항목을 입력
-                    new_data_type_letter_space[data_type_cnt-1] = data_type_letter_move_n;
-
-                    //delete array and children also for memory move.
-                    //memory-off : 배열 삭제로 루프중에 제거됨
-                    delete[] data_type_letter_space;
-
-                    //memory move
-                    data_type_letter_space = new_data_type_letter_space;
-
-                    //reset move_n
-                    data_type_letter_move_n = 0;
-
-                    //set latest colon at
-                    data_type_latest_colon_at = loop_idx;
+                if ((CHATTY_UINT32)*_buffer_low_scaled_a == (CHATTY_UINT32)_keyword_from_lowscaled[0]
+                    && (CHATTY_UINT32)*_buffer_low_scaled_b == (CHATTY_UINT32)_keyword_from_lowscaled[1]
+                    && (CHATTY_UINT32)*_buffer_low_scaled_c == (CHATTY_UINT32)_keyword_from_lowscaled[2]
+                    && (CHATTY_UINT32)*_buffer_low_scaled_d == (CHATTY_UINT32)_keyword_from_lowscaled[3]
+                        ) {
+                    printf("\n%s\n", "(Notice) from keyword detected!");
+                    _from_at = loop_idx;
                 };
-            };
-            ++data_type_letter_move_n;
-        };
 
-        //마지막 요소 삽입
-        ++data_type_cnt;
-        CHATTY_SIZE extra_size(0);
-        CHATTY_SIZE* new_data_type_letter_space_for_last = new CHATTY_SIZE[data_type_cnt];
+                //memory-off : 버퍼 소문자들 처리 완료
+                delete _buffer_low_scaled_a;
+                delete _buffer_low_scaled_b;
+                delete _buffer_low_scaled_c;
+                delete _buffer_low_scaled_d;
 
-        //value copy
-        for (loop_idx = 0; loop_idx < data_type_cnt; ++loop_idx) {
-            new_data_type_letter_space_for_last[loop_idx] = data_type_letter_space[loop_idx];
-        };
-
-        //put at last
-        if((CHATTY_INT32)data_type[data_type_size-1] == 58) {
-            CHATTY_SIZE dummy_idx(0);
-            while(true) {
-                CHATTY_UINT32 buffer_n = (CHATTY_INT32)data_type[data_type_size + dummy_idx - 1];
-                std::cout << buffer_n << '\n';
-                if (buffer_n == 58) {
-                    ++extra_size;
-                } else {
+                if (query_size - (CHATTY_CONST_KEYWORD_SIZE_FROM - 1) <= loop_idx) {
+                    std::cout << std::endl;
+                    printf("%s\n", "(Alert) from keyword not exists. that will occurred error!");
                     break;
                 };
-                ++dummy_idx;
+
+                if (_from_at != 0)
+                    break;
+
             };
-        };
-        new_data_type_letter_space_for_last[data_type_cnt-1] = data_type_size - data_type_latest_colon_at - extra_size - 1;
 
-        //delete array and children also for memory move.
-        //memory-off : 메모리 제거됨
-        delete[] data_type_letter_space;
+            //memory-off : 처리 완료
+            delete _keyword_from_lowscaled;
 
-        //memory copy for last
-        data_type_letter_space = new_data_type_letter_space_for_last;
+            //데이터 타입 루프
+            for (loop_idx=0;loop_idx<data_type_size;++loop_idx) {
 
-        //쿼리의 컬럼 갯수가 데이터 타입의 갯수랑 맞는지 검사
-        if (is_select_syntax && _from_at != 0 && data_type_cnt != 0) {
-            printf("%s\n", "(Notice) now checking for query count of column part and count of data_type. that two will be must matched. if else occurred error.");
+                //colon is numbered `58` by ascii table.
+                if ((CHATTY_UINT32)data_type[loop_idx] == 58) {
+                    //콜론 다음으로 오는 문자가 존재하는 (0`널바이트` || 32`스페이스` || 58`콜론` 가 아닌) 경우 확정한다.
+                    if ((CHATTY_UINT32)data_type[loop_idx + 1] != 0 && (CHATTY_UINT32)data_type[loop_idx + 1] != 32 && (CHATTY_UINT32)data_type[loop_idx + 1] != 58) {
+                        ++data_type_cnt;
 
+                        //더 큰 크기의 동적 배열을 준비
+                        CHATTY_SIZE* new_data_type_letter_space = new CHATTY_SIZE[data_type_cnt + 1];
 
-            CHATTY_SIZE start_point(CHATTY_CONST_KEYWORD_SIZE_SELECT - 1);
-            CHATTY_SIZE end_point(_from_at - start_point - 1);
-            CHATTY_SIZE _size_unsigned_char = sizeof(CHATTY_UCHAR);
+                        //값이 있으면 기존에 있던 값을 옮기기
+                        if (data_type_cnt-1 != 0) {
+                            CHATTY_SIZE loop_in_idx(0);
+                            for(loop_in_idx=0;loop_in_idx<data_type_cnt;++loop_in_idx) {
+                                new_data_type_letter_space[loop_in_idx] = data_type_letter_space[loop_in_idx];
+                            };
 
-            CHATTY_ANY* _part_of_column = (CHATTY_ANY*)malloc(_size_unsigned_char * end_point + 1);
-            memcpy(_part_of_column, query+start_point + 1 , end_point);
+                            //계산상 콜론까지 카운트되니 이후부턴 콜론만큼을 제외한 크기를 계산하기 위해
+                            --data_type_letter_move_n;
+                        };
 
+                        //새 항목을 입력
+                        new_data_type_letter_space[data_type_cnt-1] = data_type_letter_move_n;
 
-            CHATTY_UCHAR_PTR cv_column_part = (CHATTY_UCHAR_PTR)_part_of_column;
-            cv_column_part[end_point] = '\0';
+                        //delete array and children also for memory move.
+                        //memory-off : 배열 삭제로 루프중에 제거됨
+                        delete[] data_type_letter_space;
 
-            //준비
-            CHATTY_UINT32 _tmp_spot_letter_n = (CHATTY_UINT32)CHATTY_CONST_KEYWORD_SPOT_LATTER_FOR_SINGLE;
+                        //memory move
+                        data_type_letter_space = new_data_type_letter_space;
 
-            //반점 갯수
-            CHATTY_SIZE spot_cnt(0);
+                        //reset move_n
+                        data_type_letter_move_n = 0;
 
-            //마지막 스팟이 어디에 있었나
-            CHATTY_SIZE latest_spot_at(0);
+                        //set latest colon at
+                        data_type_latest_colon_at = loop_idx;
+                    };
+                };
+                ++data_type_letter_move_n;
+            };
 
-            for(loop_idx=0;loop_idx<end_point;++loop_idx) {
-                CHATTY_UINT32 buffer_a = (CHATTY_UCHAR)cv_column_part[loop_idx];
-                if (buffer_a == _tmp_spot_letter_n) {
-                    ++spot_cnt;
-                    latest_spot_at = loop_idx;
+            //마지막 요소 삽입
+            ++data_type_cnt;
+            CHATTY_SIZE extra_size(0);
+            CHATTY_SIZE* new_data_type_letter_space_for_last = new CHATTY_SIZE[data_type_cnt];
+
+            //value copy
+            for (loop_idx = 0; loop_idx < data_type_cnt; ++loop_idx) {
+                new_data_type_letter_space_for_last[loop_idx] = data_type_letter_space[loop_idx];
+            };
+
+            //put at last
+            if((CHATTY_INT32)data_type[data_type_size-1] == 58) {
+                CHATTY_SIZE dummy_idx(0);
+                while(true) {
+                    CHATTY_UINT32 buffer_n = (CHATTY_INT32)data_type[data_type_size + dummy_idx - 1];
+                    std::cout << buffer_n << '\n';
+                    if (buffer_n == 58) {
+                        ++extra_size;
+                    } else {
+                        break;
+                    };
+                    ++dummy_idx;
                 };
             };
+            new_data_type_letter_space_for_last[data_type_cnt-1] = data_type_size - data_type_latest_colon_at - extra_size - 1;
 
-            if (end_point-1 > latest_spot_at+1) {
-                ++spot_cnt;
+            //delete array and children also for memory move.
+            //memory-off : 메모리 제거됨
+            delete[] data_type_letter_space;
+
+            //memory copy for last
+            data_type_letter_space = new_data_type_letter_space_for_last;
+
+            //쿼리의 컬럼 갯수가 데이터 타입의 갯수랑 맞는지 검사
+            if (is_select_syntax && _from_at != 0 && data_type_cnt != 0) {
+                printf("%s\n", "(Notice) now checking for query count of column part and count of data_type. that two will be must matched. if else occurred error.");
+
+
+                CHATTY_SIZE start_point(CHATTY_CONST_KEYWORD_SIZE_SELECT - 1);
+                CHATTY_SIZE end_point(_from_at - start_point - 1);
+                CHATTY_SIZE _size_unsigned_char = sizeof(CHATTY_UCHAR);
+
+                CHATTY_ANY* _part_of_column = (CHATTY_ANY*)malloc(_size_unsigned_char * end_point + 1);
+                memcpy(_part_of_column, query+start_point + 1 , end_point);
+
+
+                CHATTY_UCHAR_PTR cv_column_part = (CHATTY_UCHAR_PTR)_part_of_column;
+                cv_column_part[end_point] = '\0';
+
+                //준비
+                CHATTY_UINT32 _tmp_spot_letter_n = (CHATTY_UINT32)CHATTY_CONST_KEYWORD_SPOT_LATTER_FOR_SINGLE;
+
+                //반점 갯수
+                CHATTY_SIZE spot_cnt(0);
+
+                //마지막 스팟이 어디에 있었나
+                CHATTY_SIZE latest_spot_at(0);
+
+                for(loop_idx=0;loop_idx<end_point;++loop_idx) {
+                    CHATTY_UINT32 buffer_a = (CHATTY_UCHAR)cv_column_part[loop_idx];
+                    if (buffer_a == _tmp_spot_letter_n) {
+                        ++spot_cnt;
+                        latest_spot_at = loop_idx;
+                    };
+                };
+
+                if (end_point-1 > latest_spot_at+1) {
+                    ++spot_cnt;
+                };
+
+                // 갯수가 맞아서 나중에 에러 안남
+                if (spot_cnt == data_type_cnt) {
+                    printf("%s\n", "(Ok) column count matched!");
+                    is_selection_query_will_be_ok = true;
+                } else {
+                    printf("%s\n", "(Alert) column count not matched!");
+                };
+                delete cv_column_part;
             };
-
-            // 갯수가 맞아서 나중에 에러 안남
-            if (spot_cnt == data_type_cnt) {
-                printf("%s\n", "(Ok) column count matched!");
-                is_selection_query_will_be_ok = true;
-            } else {
-                printf("%s\n", "(Alert) column count not matched!");
-            };
-
-            delete cv_column_part;
+        } else {
+            printf("%s\n", "(Notice) is not selection query!");
         };
 
     } else {
@@ -1295,6 +1294,7 @@ CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_DB_F
         };
         return res;
     };
+
     //definition compatible data type
     const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
     const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
@@ -1326,8 +1326,6 @@ CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_DB_F
                 delete buff;
                 std::cout << "- - - - - - - - column delete : " << buffer_column_value << " / data_type : undefined(int32)" << '\n';
             };
-
-
         };
         std::cout << "- - - - - - row delete : " << buffer_row << '\n';
         delete[] buffer_row;

@@ -9,6 +9,7 @@
 #include "chatty_embedded_db_type_defs.h"
 
 #include "chatty_embedded_db_master.h"
+#include "chatty_embedded_db_controller.h"
 
 #include <cstdio>
 #include <cstdlib>
