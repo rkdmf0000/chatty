@@ -11,6 +11,75 @@
 sql query helper 만들어서 쓰려고 하는중  
 
 
+## 20210427 on proc - 쿼리 부족한 부분까지 완성
+
+```c++
+
+    CHATTY_ANY* query_result(nullptr);
+    CHATTY_ERROR_CODE ref_code(0);
+
+    query_result = chatty_embedded_db_controller::fetch_request_exec(
+            (CHATTY_UCHAR_PTR)CHATTY_DB_NAME,
+            (CHATTY_UCHAR_PTR)"SELECT id,latest_connect_date,is_online FROM CHATTY_CONNECTION",
+            (CHATTY_UCHAR_PTR)"text:int64:int32",
+            &ref_code
+            );
+
+    //debug : 로우 찍히는지 테스트
+    if (query_result != nullptr && ref_code != CHATTY_STATUS_ERROR) {
+        CHATTY_DB_FETCH_RESULT* _dummy_test_query_result = (CHATTY_DB_FETCH_RESULT*)query_result;
+        for(int idx=0;idx<_dummy_test_query_result->size;++idx) {
+            void** buffer_row = (void**)_dummy_test_query_result->value[idx];
+            unsigned char* _column_id = (unsigned char*)buffer_row[0];
+            std::cout << "id : " << _column_id << '\n';
+        };
+    } else {
+        std::cout << "결과값이 없어서 테스트 스킵!" << '\n';
+    };
+
+    if (query_result != nullptr) {
+        chatty_embedded_db_controller::fetch_request_exec_release(query_result);
+    };
+
+```
+```console
+(Notice) it's on type casting to `CHATTY_DB_FETCH_RESULT*` by language syntax overload for release-ment process
+(Notice) release-ment on start
+(Info) column count : 3 / row count : 7
+- - - - - - - - column delete : 0x5651377adb80 / data_type : text
+- - - - - - - - column delete : 0x5651377adac0 / data_type : int64
+- - - - - - - - column delete : 0x5651377ada00 / data_type : int32
+- - - - - - row delete : 0x565137796a40
+- - - - - - - - column delete : 0x5651377ae4b0 / data_type : text
+- - - - - - - - column delete : 0x5651377ae4d0 / data_type : int64
+- - - - - - - - column delete : 0x5651377ae4f0 / data_type : int32
+- - - - - - row delete : 0x565137796870
+- - - - - - - - column delete : 0x5651377ae530 / data_type : text
+- - - - - - - - column delete : 0x5651377ae550 / data_type : int64
+- - - - - - - - column delete : 0x5651377ae570 / data_type : int32
+- - - - - - row delete : 0x5651377ae490
+- - - - - - - - column delete : 0x5651377ae590 / data_type : text
+- - - - - - - - column delete : 0x5651377ae5b0 / data_type : int64
+- - - - - - - - column delete : 0x5651377ae5d0 / data_type : int32
+- - - - - - row delete : 0x5651377ad800
+- - - - - - - - column delete : 0x5651377ae5f0 / data_type : text
+- - - - - - - - column delete : 0x5651377ae610 / data_type : int64
+- - - - - - - - column delete : 0x5651377ae630 / data_type : int32
+- - - - - - row delete : 0x565137796ae0
+- - - - - - - - column delete : 0x5651377ae670 / data_type : text
+- - - - - - - - column delete : 0x5651377ae690 / data_type : int64
+- - - - - - - - column delete : 0x5651377ae6b0 / data_type : int32
+- - - - - - row delete : 0x5651377ae510
+- - - - - - - - column delete : 0x5651377ae730 / data_type : text
+- - - - - - - - column delete : 0x5651377ae750 / data_type : int64
+- - - - - - - - column delete : 0x5651377ae770 / data_type : int32
+- - - - - - row delete : 0x5651377ae650
+- - - - value delete : 0x5651377ae6d0
+- - self delete : 0x5651377adc40
+→ deleted _defined_type and column_type
+
+```
+
 ## 20210426 on proc - 쿼리 보내고 메모리 릴리즈하는 부붐까지 완성
 
 `query`파라미터에 `SELECT id,id,latest_connect_date FROM CHATTY_CONNECTION` 구문을 입력하는 경우
