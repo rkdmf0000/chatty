@@ -496,7 +496,12 @@ CHATTY_FLAG chatty_embedded_db_controller::fetchall_connection(CHATTY_ANY* group
         chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"PRINT TEST FETCH ALL RESULT");
         std::cout << "ROWS ARE TOTALLY EXISTS : " << row_length << '\n';
         for(idx=0;idx<row_length;++idx) {
-            std::cout << rf_collection->value[idx] << " / " << rf_collection->value[idx]->idx << " / " << rf_collection->value[idx]->id << " / " << rf_collection->value[idx]->latest_connect_date << " / " << rf_collection->value[idx]->is_online << '\n';
+            std::cout << rf_collection->value[idx]
+            << " / " << rf_collection->value[idx]->idx
+            << " / " << rf_collection->value[idx]->id
+            << " / " << rf_collection->value[idx]->latest_connect_date
+            << " / " << rf_collection->value[idx]->is_online
+            << '\n';
         };
 #endif
 
@@ -620,7 +625,7 @@ CHATTY_SIZE chatty_embedded_db_controller::count() {
 
 CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
         CHATTY_UCHAR_PTR db_path,
-        const CHATTY_UCHAR_PTR query,
+        CHATTY_UCHAR_PTR query,
         const CHATTY_UCHAR_PTR data_type,
         CHATTY_ERROR_CODE* return_error_code) {
 
@@ -628,21 +633,32 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     //return value type definition
     enum class type {INT32,INT64,TEXT};
 
+    /**
+     * @usage       internal function definition by upside
+     * @desc        글자수 반환
+    * */
+    auto get_str_len = [](unsigned char* char_txt)->const unsigned int {
+        unsigned int size(0);
+        if (char_txt != nullptr)
+            while(char_txt[size])
+                ++size;
+        return (unsigned int)size;
+    };
+
 
     /**
      * @usage       internal function definition by upside
-     * @desc        It need to release after use!
      * @desc        문자조합을 숫자로 해시변환 해준다. 중복률은 잘 모르겠고 아주 잘 동작한다.
      * @desc        문자열 비교를 위해 사용됨
     * */
     auto ctoi_roll = [](unsigned char* char_txt)->const int {
         int i(0);
-        int res(0x55555555);
+        int res(CHATTY_DB_FN_HASH);
         while(char_txt[i]) {
             unsigned int buff_n = (unsigned int)char_txt[i];
             res += buff_n;
             res *= (int)(buff_n + i);
-            res &= 0x55555555; //BIT CASING
+            res &= CHATTY_DB_FN_HASH; //BIT CASING
             ++i;
         };
         return res;
@@ -675,6 +691,29 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
         return fc;
     };
 
+    //루프시 공용으로 사용하는 더미-정수
+    CHATTY_SIZE loop_idx(0);
+
+    //definition compatible data type
+    const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
+    const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
+    const CHATTY_UINT32 _type_text        = ctoi_roll((CHATTY_UCHAR_PTR)"text");
+
+    //add type definition
+    //야는 무저간 생성함
+    //is_row 가 false 라면 꼭 제거가 필요
+    //memory-on : 메모리 select 구문시 남겨두고 strcut self detroy 할 때 제거됨. 미사용시 최하단 is_row 에서 false 인 경우 제거
+    CHATTY_UINT32* _defined_type = new CHATTY_UINT32[CHATTY_DB_DATA_TYPE_COUNT];
+    _defined_type[0] = _type_int;
+    _defined_type[1] = _type_int64;
+    _defined_type[2] = _type_text;
+
+    //is_row 가 true 일 때 heap 메모리 생성됨
+    //메모리를 굳이 지울필요 없이 structure 의 destructure 에서 제거가 있음
+    //release 함수의 self destruct 까지 도달하면 구조체의 소멸자에서 제거됨
+    //따라서 해당 함수에서 제거하면 안됨.
+    CHATTY_UINT32* _defined_column_type;
+
     CHATTY_FLAG skip(false),exed(false),is_row(false);
 
     CHATTY_DB_LIB sqlite3_structure(nullptr);
@@ -683,8 +722,6 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     CHATTY_CHAR_PTR err_msg;
     CHATTY_ERROR_CODE err_code;
 
-    //루프시 공용으로 사용하는 더미-정수
-    CHATTY_SIZE loop_idx(0);
 
     //로우가 있으면 그 갯수
     CHATTY_SIZE row_cnt(0);
@@ -699,22 +736,124 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     CHATTY_SIZE data_type_latest_colon_at(0);
     //데이터 타입의 갯수를 의미
     CHATTY_SIZE data_type_cnt(0);
-    //글자수를 의미
+    //데이터 타입 글자수를 의미
     CHATTY_SIZE data_type_size(0);
-
-
+    //쿼리 앞쪽에 select 라고 적혀있는지 확인하는 값
+    CHATTY_FLAG is_select_syntax(false);
+    //이 쿼리 컬럼의 갯수나 정의 할 데이터 타입의 갯수가 일치하는가.
+    CHATTY_FLAG is_selection_query_will_be_ok(false);
+    //쿼리 글자수를 의미
+    CHATTY_SIZE query_size(0);
 
     //정제된 데이터 타입 묶음을 가져오는 필수 요소
     //memory-on : 사용시 메모리를 제거했나요? (y@/n)
     //memory-on : 비사용시 메모리를 제거했나요? (y@/n)
     CHATTY_ANY** _mem_transport(nullptr);
 
-    //글자수 가져오기
+    //데이터 타입 글자수 가져오기
     if (data_type != nullptr)
-        while(data_type[data_type_size])
-            ++data_type_size;
+        data_type_size = get_str_len(data_type);
+
+    //쿼리 글자수 가져오기
+    if (query != nullptr)
+        query_size = get_str_len(query);
+
 
     if (data_type_size != 0) {
+
+        //컬럼 정의의 끝인 from 을 감지하기 위한 준비
+        CHATTY_UCHAR_PTR _keyword_from = (CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_FROM;
+
+        //문자의 앞이 select 인 경우를 감지하기 위한 준비
+        CHATTY_UCHAR_PTR _keyword_select = (CHATTY_UCHAR_PTR) CHATTY_CONST_KEYWORD_SELECT;
+
+        //적어도 select 적을 정도의 문자길이가 되야 비교를 하지
+        if (query_size >= (CHATTY_SIZE)CHATTY_CONST_KEYWORD_SIZE_SELECT - 1) {
+
+            //memory-on : 제어필요
+            CHATTY_UCHAR_PTR _keyword_select_lowscaled(nullptr);
+            _keyword_select_lowscaled = lowscale_up_alphabet(_keyword_select, CHATTY_CONST_KEYWORD_SIZE_SELECT - 1);
+            CHATTY_UINT32 _keyword_select_lowscaled_hash = ctoi_roll(_keyword_select_lowscaled);
+
+            //문자열 앞부분을 셀렉트 크기만큼 복사
+            CHATTY_SIZE _size_unsigned_char = sizeof(CHATTY_UCHAR);
+            CHATTY_UCHAR_PTR _copied_select(nullptr);
+
+            memcpy(&_copied_select, &query, _size_unsigned_char * (CHATTY_CONST_KEYWORD_SIZE_SELECT - 1));
+
+            //memory-on : 제어필요
+            CHATTY_UCHAR_PTR _copied_select_lowscaled(nullptr);
+            _copied_select_lowscaled = lowscale_up_alphabet(_copied_select, CHATTY_CONST_KEYWORD_SIZE_SELECT - 1);
+            CHATTY_UINT32 _copied_select_lowscaled_hash = ctoi_roll(_copied_select_lowscaled);
+
+            if (_copied_select_lowscaled_hash == _keyword_select_lowscaled_hash) {
+                printf("%s\n", "(Notice) selection syntax detected");
+                is_select_syntax = true;
+            };
+
+            //memory-off : 오물1 처리 완료
+            delete _keyword_select_lowscaled;
+            //memory-off : 오물2 처리 완료
+            delete _copied_select_lowscaled;
+        };
+
+
+
+        printf("%s\n", "(Notice) finding from keyword");
+
+        //memory-on : 제어필요
+        CHATTY_UCHAR_PTR _keyword_from_lowscaled(nullptr);
+        _keyword_from_lowscaled = lowscale_up_alphabet(_keyword_from, CHATTY_CONST_KEYWORD_SIZE_FROM - 1);
+
+        //from 키워드가 어디서 시작하는지
+        CHATTY_SIZE _from_at(0);
+
+        //쿼리 루프
+        for (loop_idx=0;loop_idx<query_size;++loop_idx) {
+
+
+
+            //memory-on : 버퍼 소문자 힙 ㅈㄴ 생성
+            CHATTY_UCHAR_PTR _buffer_low_scaled_a = lowscale_up_alphabet(&query[loop_idx], 1);
+            CHATTY_UCHAR_PTR _buffer_low_scaled_b = lowscale_up_alphabet(&query[loop_idx+1], 1);
+            CHATTY_UCHAR_PTR _buffer_low_scaled_c = lowscale_up_alphabet(&query[loop_idx+2], 1);
+            CHATTY_UCHAR_PTR _buffer_low_scaled_d = lowscale_up_alphabet(&query[loop_idx+3], 1);
+
+            if (loop_idx % 8 == 0 && loop_idx != 0)
+                printf("\r\n");
+
+            printf("-%c%c%c%c-", *_buffer_low_scaled_a, *_buffer_low_scaled_b, *_buffer_low_scaled_c, *_buffer_low_scaled_d);
+
+            if ((CHATTY_UINT32)*_buffer_low_scaled_a == (CHATTY_UINT32)_keyword_from_lowscaled[0]
+                && (CHATTY_UINT32)*_buffer_low_scaled_b == (CHATTY_UINT32)_keyword_from_lowscaled[1]
+                && (CHATTY_UINT32)*_buffer_low_scaled_c == (CHATTY_UINT32)_keyword_from_lowscaled[2]
+                && (CHATTY_UINT32)*_buffer_low_scaled_d == (CHATTY_UINT32)_keyword_from_lowscaled[3]
+            ) {
+                printf("\n%s\n", "(Notice) from keyword detected!");
+                _from_at = loop_idx;
+            };
+
+            //memory-off : 버퍼 소문자들 처리 완료
+            delete _buffer_low_scaled_a;
+            delete _buffer_low_scaled_b;
+            delete _buffer_low_scaled_c;
+            delete _buffer_low_scaled_d;
+
+            if (query_size - (CHATTY_CONST_KEYWORD_SIZE_FROM - 1) <= loop_idx) {
+                std::cout << std::endl;
+                printf("%s\n", "(Alert) from keyword not exists. that will occurred error!");
+                break;
+            };
+
+            if (_from_at != 0)
+                break;
+
+        };
+
+        //memory-off : 처리 완료
+        delete _keyword_from_lowscaled;
+
+        //데이터 타입 루프
         for (loop_idx=0;loop_idx<data_type_size;++loop_idx) {
 
             //colon is numbered `58` by ascii table.
@@ -732,7 +871,6 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
                         for(loop_in_idx=0;loop_in_idx<data_type_cnt;++loop_in_idx) {
                             new_data_type_letter_space[loop_in_idx] = data_type_letter_space[loop_in_idx];
                         };
-
 
                         //계산상 콜론까지 카운트되니 이후부턴 콜론만큼을 제외한 크기를 계산하기 위해
                         --data_type_letter_move_n;
@@ -791,11 +929,60 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
         //memory copy for last
         data_type_letter_space = new_data_type_letter_space_for_last;
 
+        //쿼리의 컬럼 갯수가 데이터 타입의 갯수랑 맞는지 검사
+        if (is_select_syntax && _from_at != 0 && data_type_cnt != 0) {
+            printf("%s\n", "(Notice) now checking for query count of column part and count of data_type. that two will be must matched. if else occurred error.");
+
+
+            CHATTY_SIZE start_point(CHATTY_CONST_KEYWORD_SIZE_SELECT - 1);
+            CHATTY_SIZE end_point(_from_at - start_point - 1);
+            CHATTY_SIZE _size_unsigned_char = sizeof(CHATTY_UCHAR);
+
+            CHATTY_ANY* _part_of_column = (CHATTY_ANY*)malloc(_size_unsigned_char * end_point + 1);
+            memcpy(_part_of_column, query+start_point + 1 , end_point);
+
+
+            CHATTY_UCHAR_PTR cv_column_part = (CHATTY_UCHAR_PTR)_part_of_column;
+            cv_column_part[end_point] = '\0';
+
+            //준비
+            CHATTY_UINT32 _tmp_spot_letter_n = (CHATTY_UINT32)CHATTY_CONST_KEYWORD_SPOT_LATTER_FOR_SINGLE;
+
+            //반점 갯수
+            CHATTY_SIZE spot_cnt(0);
+
+            //마지막 스팟이 어디에 있었나
+            CHATTY_SIZE latest_spot_at(0);
+
+            for(loop_idx=0;loop_idx<end_point;++loop_idx) {
+                CHATTY_UINT32 buffer_a = (CHATTY_UCHAR)cv_column_part[loop_idx];
+                if (buffer_a == _tmp_spot_letter_n) {
+                    ++spot_cnt;
+                    latest_spot_at = loop_idx;
+                };
+            };
+
+            if (end_point-1 > latest_spot_at+1) {
+                ++spot_cnt;
+            };
+
+            // 갯수가 맞아서 나중에 에러 안남
+            if (spot_cnt == data_type_cnt) {
+                printf("%s\n", "(Ok) column count matched!");
+                is_selection_query_will_be_ok = true;
+            } else {
+                printf("%s\n", "(Alert) column count not matched!");
+            };
+
+            delete cv_column_part;
+        };
+
     } else {
         //memory-off : 비사용시 메모리를 제거했습니다.
         delete[] data_type_letter_space;
         printf("(Alert) Behavior expectation : may isn't selection query for you meaning. because it is not filled `data_type` argument.`\n");
     };
+
 
     if (sqlite3_open((CHATTY_CHAR_PTR)db_path, &sqlite3_structure) != CHATTY_STATUS_OK) {
         err_msg     = (CHATTY_CHAR_PTR)sqlite3_errmsg(sqlite3_structure);
@@ -817,10 +1004,14 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
         printf("%s\n", "(Success) prepare skipped");
     };
 
+
+
     CHATTY_ERROR_CODE step_result(0);
     if (!skip) {
+
         step_result = sqlite3_step(sqlite3_statement);
         exed = true;
+
         switch(step_result) {
             case CHATTY_STATUS_OK:
                 printf("%s (%d)\n", "(QUERY) request is ok", step_result);
@@ -834,20 +1025,20 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
             case CHATTY_STATUS_ROW:
                 printf("%s (%d)\n", "(QUERY) got a rows", step_result);
                 printf("%s \n", "(Notice) going on `row` refining proceeds");
+
                 //`data_type`이 있어서 `row` 를 정제하는 경우
-                if (data_type_size != 0) {
+                if (data_type_size != 0 && is_select_syntax && is_selection_query_will_be_ok) {
+
                     //결과값이 있음을 의미
                     is_row = true;
                     //글자수를 추가
                     row_cnt = 1;
 
-                    //definition compatible data type
-                    const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
-                    const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
-                    const CHATTY_UINT32 _type_text        = ctoi_roll((CHATTY_UCHAR_PTR)"text");
-
-
-                    //최초 실행 처리
+                    /**
+                     * ##########################################
+                     * @@@@@@@@@@@@@@@@@@@@@@@@@@@상위 단일 열 처리
+                     * ##########################################
+                     * */
                     //cpp based syntax
                     //공간 확장
                     std::cout << "- - row count (st) : " << row_cnt << '\n';
@@ -855,7 +1046,13 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
                     CHATTY_ANY** _mem_row = new CHATTY_ANY*[data_type_cnt];
 
                     CHATTY_SIZE stack(0);
+
+                    //memory-on : 사용시 struct 의 destruct 에서 제거됨
+                    //비사용시 nullptr 가 아닌경우 제거
+                    _defined_column_type = new CHATTY_UINT32[data_type_cnt];
+
                     for(loop_idx=0;loop_idx<data_type_cnt;++loop_idx) {
+
                         CHATTY_SIZE idx(0);
                         CHATTY_SIZE uchar_size = sizeof(CHATTY_UCHAR);
 
@@ -892,24 +1089,37 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
                             CHATTY_INT32* _basket = (CHATTY_INT32*)malloc(sizeof(CHATTY_INT32));
                             *_basket = _value;
                             _mem_row[loop_idx] = _basket;
+                            _defined_column_type[loop_idx] = buff_for_compare;
                             printf("(Processing-st) be setting a (row : %d) %d column to `int32` - %p\n", row_cnt, loop_idx, _basket);
                         } else if(buff_for_compare == _type_int64) {
                             CHATTY_INT64 _value = (CHATTY_INT64)sqlite3_column_int64(sqlite3_statement, (CHATTY_INT32)loop_idx);
                             CHATTY_INT64* _basket = (CHATTY_INT64*)malloc(sizeof(CHATTY_INT64));
                             *_basket = _value;
                             _mem_row[loop_idx] = _basket;
+                            _defined_column_type[loop_idx] = buff_for_compare;
                             printf("(Processing-st) be setting a (row : %d) %d column to `int64` - %p\n", row_cnt, loop_idx, _basket);
                         } else if(buff_for_compare == _type_text) {
-                            CHATTY_UCHAR_PTR _basket = (CHATTY_UCHAR_PTR)sqlite3_column_text(sqlite3_statement, (CHATTY_INT32)loop_idx);
+                            CHATTY_SIZE text_i(0);
+                            CHATTY_UCHAR_PTR _value = (CHATTY_UCHAR_PTR)sqlite3_column_text(sqlite3_statement, (CHATTY_INT32)loop_idx);
+                            CHATTY_UINT32 _value_size(0);
+                            CHATTY_SIZE uchar_size = sizeof(CHATTY_UCHAR);
+                            _value_size = get_str_len(_value);
+                            CHATTY_UCHAR_PTR _basket = (CHATTY_UCHAR_PTR)malloc(uchar_size * _value_size + 1);
+                            for(text_i=0;text_i<uchar_size * _value_size + 1;++text_i)
+                                _basket[text_i] = 0;
+                            memmove(_basket, _value, _value_size * uchar_size);
                             _mem_row[loop_idx] = _basket;
+                            _defined_column_type[loop_idx] = buff_for_compare;
                             printf("(Processing-st) be setting a (row : %d) %d column to `text` - %p\n", row_cnt, loop_idx, _basket);
                         } else {
                             CHATTY_INT32 _value = sqlite3_column_int(sqlite3_statement, (CHATTY_INT32)loop_idx);
                             CHATTY_INT32* _basket = (CHATTY_INT32*)malloc(sizeof(CHATTY_INT32));
                             *_basket = _value;
                             _mem_row[loop_idx] = _basket;
+                            _defined_column_type[loop_idx] = buff_for_compare;
                             printf("(Processing-st) be setting a (row : %d) %d column to `int32 as DEFAULT.` - %p\n", row_cnt, loop_idx, _basket);
                         };
+
                         //업 스케일의
                         //memory-off : 할 일 다 끝내고 루프중에 제거됨
                         delete buff_for_var;
@@ -922,7 +1132,11 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
 
                     std::cout << std::endl << std::endl;
 
-                    //나머지 동일 처리
+                    /**
+                     * ##########################################
+                     * @@@@@@@@@@@@@@@@@@@@@@@@@@@하위 열 동일 처리
+                     * ##########################################
+                     * */
                     while(sqlite3_step(sqlite3_statement) != CHATTY_STATUS_DONE) {
 
                         std::cout << "- - row count (nd) : " << row_cnt+1 << '\n';
@@ -983,9 +1197,17 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
                                 _mem_row_nd[loop_idx] = _basket;
                                 printf("(Processing-nd) be setting a (row : %d) %d column to `int64` - %p\n", row_cnt+1, loop_idx, _basket);
                             } else if(buff_for_compare == _type_text) {
-                                CHATTY_UCHAR_PTR _basket = (CHATTY_UCHAR_PTR)sqlite3_column_text(sqlite3_statement, (CHATTY_INT32)loop_idx);
+                                CHATTY_SIZE text_i(0);
+                                CHATTY_UCHAR_PTR _value = (CHATTY_UCHAR_PTR)sqlite3_column_text(sqlite3_statement, (CHATTY_INT32)loop_idx);
+                                CHATTY_UINT32 _value_size(0);
+                                CHATTY_SIZE uchar_size = sizeof(CHATTY_UCHAR);
+                                _value_size = get_str_len(_value);
+                                CHATTY_UCHAR_PTR _basket = (CHATTY_UCHAR_PTR)malloc(uchar_size * _value_size + 1);
+                                for(text_i=0;text_i<uchar_size * _value_size + 1;++text_i)
+                                    _basket[text_i] = 0;
+                                memmove(_basket, _value, _value_size * uchar_size);
                                 _mem_row_nd[loop_idx] = _basket;
-                                printf("(Processing-nd) be setting a (row : %d) %d column to `text` - %p\n", row_cnt+1, loop_idx, _basket);
+                                printf("(Processing-nd) be setting a (row : %d) %d column to `text` - %p\n", row_cnt+1, loop_idx, _value);
                             } else {
                                 CHATTY_INT32 _value = sqlite3_column_int(sqlite3_statement, (CHATTY_INT32)loop_idx);
                                 CHATTY_INT32* _basket = (CHATTY_INT32*)malloc(sizeof(CHATTY_INT32));
@@ -1002,7 +1224,6 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
 
                         _new_mem_transport[row_cnt] = _mem_row_nd;
                         std::cout << "- - - - " << _new_mem_transport[row_cnt] << " row is now made (nd)" << '\n';
-
 
                         delete[] _mem_transport;
                         _mem_transport = _new_mem_transport;
@@ -1037,28 +1258,76 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     printf("(Notice) ** reset (%d), finalize (%d), close (%d)\n", stat_reset, stat_finalize, stat_close);
 
     if (is_row) {
-        CHATTY_DB_FETCH_RESULT* returns = new CHATTY_DB_FETCH_RESULT;
-        returns->value      = _mem_transport;
-        returns->size       = row_cnt;
-        returns->column_cnt = data_type_cnt;
         printf("%s\n", "(Success) row returned");
+        CHATTY_DB_FETCH_RESULT* returns = new CHATTY_DB_FETCH_RESULT(data_type_cnt);
+        returns->_defined_type          = _defined_type;
+        returns->_defined_column_type   = _defined_column_type;
+        returns->value                  = _mem_transport;
+        returns->size                   = row_cnt;
+        returns->column_cnt             = data_type_cnt;
         return returns;
     } else {
-        printf("%s\n", "(Success) is notting returned");
+        printf("%s\n", "(Success) is notting returned (1)");
+        delete[] _defined_type;
+        //delete[] _defined_column_type;
+        printf("%s\n", "(Success) is notting returned (2)");
         return nullptr;
     }
 }
 
 CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_DB_FETCH_RESULT *addr) {
+
+    /**
+     * @usage       internal function definition by upside
+     * @desc        It need to release after use!
+     * @desc        문자조합을 숫자로 해시변환 해준다. 중복률은 잘 모르겠고 아주 잘 동작한다.
+     * @desc        문자열 비교를 위해 사용됨
+    * */
+    auto ctoi_roll = [](unsigned char* char_txt)->const int {
+        int i(0);
+        int res(CHATTY_DB_FN_HASH);
+        while(char_txt[i]) {
+            unsigned int buff_n = (unsigned int)char_txt[i];
+            res += buff_n;
+            res *= (int)(buff_n + i);
+            res &= CHATTY_DB_FN_HASH; //BIT CASING
+            ++i;
+        };
+        return res;
+    };
+    //definition compatible data type
+    const CHATTY_UINT32 _type_int         = ctoi_roll((CHATTY_UCHAR_PTR)"int32");
+    const CHATTY_UINT32 _type_int64       = ctoi_roll((CHATTY_UCHAR_PTR)"int64");
+    const CHATTY_UINT32 _type_text        = ctoi_roll((CHATTY_UCHAR_PTR)"text");
+
     printf("%s\n", "(Notice) release-ment on start");
+
     std::cout << "(Info) column count : " << addr->column_cnt << " / row count : " << addr->size << '\n';
+
     CHATTY_SIZE i(0),ii(0);
     for(i=0;i<addr->size;++i) {
         void** buffer_row = (void**)addr->value[i];
         for(ii=0;ii<addr->column_cnt;++ii) {
             void* buffer_column_value = (void*)buffer_row[ii];
-            std::cout << "- - - - - - - - column delete : " << buffer_column_value << '\n';
-            delete buffer_column_value;
+            if (addr->_defined_column_type[ii] == _type_int) {
+                CHATTY_INT32* buff = (CHATTY_INT32*)buffer_column_value;
+                delete buff;
+                std::cout << "- - - - - - - - column delete : " << buffer_column_value << " / data_type : int32" << '\n';
+            } else if (addr->_defined_column_type[ii] == _type_int64) {
+                CHATTY_INT64* buff = (CHATTY_INT64*)buffer_column_value;
+                delete buff;
+                std::cout << "- - - - - - - - column delete : " << buffer_column_value << " / data_type : int64" << '\n';
+            } else if (addr->_defined_column_type[ii] == _type_text) {
+                CHATTY_UCHAR_PTR buff = (CHATTY_UCHAR_PTR)buffer_column_value;
+                delete[] buff;
+                std::cout << "- - - - - - - - column delete : " << buffer_column_value << " / data_type : text" << '\n';
+            } else {
+                CHATTY_INT32* buff = (CHATTY_INT32*)buffer_column_value;
+                delete buff;
+                std::cout << "- - - - - - - - column delete : " << buffer_column_value << " / data_type : undefined(int32)" << '\n';
+            };
+
+
         };
         std::cout << "- - - - - - row delete : " << buffer_row << '\n';
         delete[] buffer_row;

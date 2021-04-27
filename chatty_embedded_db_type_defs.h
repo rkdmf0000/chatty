@@ -122,6 +122,9 @@ typedef CHATTY_UCHAR CHATTY_QUOTES_TYPE;
 #define CHATTY_CONST_KEYWORD_SPOT_LATTER ","
 #define CHATTY_CONST_KEYWORD_SIZE_SPOT_LATTER 2
 
+#define CHATTY_CONST_KEYWORD_SPOT_LATTER_FOR_SINGLE ','
+#define CHATTY_CONST_KEYWORD_SIZE_SPOT_LATTER 2
+
 #define CHATTY_CONST_KEYWORD_SPACE_LATTER " "
 #define CHATTY_CONST_KEYWORD_SIZE_SPACE_LATTER 2
 
@@ -158,6 +161,23 @@ typedef CHATTY_UCHAR CHATTY_QUOTES_TYPE;
 #define CHATTY_DATA_QUOTE_DOUBLE 34
 #define CHATTY_DATA_GRAVE 96
 #define CHATTY_DATA_BACKSLASH 92
+
+
+/**
+ * 지금 구현된 변환 값
+ * */
+#define CHATTY_DB_DATA_TYPE_COUNT 3
+#define CHATTY_DB_DATA_TYPE_VALUE_NULL 0
+#define CHATTY_DB_DATA_TYPE_VALUE_DEFAULT 1
+#define CHATTY_DB_DATA_TYPE_VALUE_INT32 2
+#define CHATTY_DB_DATA_TYPE_VALUE_INT64 3
+#define CHATTY_DB_DATA_TYPE_VALUE_TEXT 4
+
+
+/**
+ * hash key
+ * */
+#define CHATTY_DB_FN_HASH 0x55555555
 
 /**
  * 단
@@ -240,9 +260,29 @@ struct CHATTY_DB_COLUMN_TOWER_STATUS_GROUP_COLLECTION {
 };
 
 struct CHATTY_DB_FETCH_RESULT {
-    CHATTY_ANY** value = nullptr;
+    //생성자
+    CHATTY_DB_FETCH_RESULT(CHATTY_SIZE cnt) {
+        _defined_value = cnt;
+    };
+    //소멸자
+    ~CHATTY_DB_FETCH_RESULT() {
+        delete[] _defined_type;
+        delete[] _defined_column_type;
+    };
+
+    //템플릿으로 상수정의된 값
+    CHATTY_UINT32 _defined_value = 0;
+    //정의된 데이터타입과 그 값
+    CHATTY_UINT32* _defined_type{nullptr};
+    //정의된 메모리의 데이터 타입
+    CHATTY_UINT32* _defined_column_type{nullptr};
+
+    //결과값
     CHATTY_SIZE size = 0;
+    //결과의 컬럼 갯수
     CHATTY_SIZE column_cnt = 0;
+    //로우 및 컬럼별 메모리 값
+    CHATTY_ANY** value = nullptr;
 };
 
 #endif //CHATTY_CHATTY_EMBEDDED_DB_TYPE_DEFS_H
