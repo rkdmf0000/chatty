@@ -1,4 +1,4 @@
-# chatty 시부렁 에러있네
+# chatty chatting server
 
 날려먹는거 방지용
 
