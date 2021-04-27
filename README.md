@@ -11,6 +11,38 @@
 sql query helper 만들어서 쓰려고 하는중  
 
 
+## 20210427 on proc - 쿼리 부족한 부분까지 완성
+
+```c++
+
+    CHATTY_ANY* query_result(nullptr);
+    CHATTY_ERROR_CODE ref_code(0);
+
+    query_result = chatty_embedded_db_controller::fetch_request_exec(
+            (CHATTY_UCHAR_PTR)CHATTY_DB_NAME,
+            (CHATTY_UCHAR_PTR)"SELECT id,latest_connect_date,is_online FROM CHATTY_CONNECTION",
+            (CHATTY_UCHAR_PTR)"text:int64:int32",
+            &ref_code
+            );
+
+    //debug : 로우 찍히는지 테스트
+    if (query_result != nullptr && ref_code != CHATTY_STATUS_ERROR) {
+        CHATTY_DB_FETCH_RESULT* _dummy_test_query_result = (CHATTY_DB_FETCH_RESULT*)query_result;
+        for(int idx=0;idx<_dummy_test_query_result->size;++idx) {
+            void** buffer_row = (void**)_dummy_test_query_result->value[idx];
+            unsigned char* _column_id = (unsigned char*)buffer_row[0];
+            std::cout << "id : " << _column_id << '\n';
+        };
+    } else {
+        std::cout << "결과값이 없어서 테스트 스킵!" << '\n';
+    };
+
+    if (query_result != nullptr) {
+        chatty_embedded_db_controller::fetch_request_exec_release(query_result);
+    };
+
+```
+
 ## 20210426 on proc - 쿼리 보내고 메모리 릴리즈하는 부붐까지 완성
 
 `query`파라미터에 `SELECT id,id,latest_connect_date FROM CHATTY_CONNECTION` 구문을 입력하는 경우
