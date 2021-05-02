@@ -11,6 +11,16 @@
 sql query helper 만들어서 쓰려고 하는중  
 
 
+## 20210502 시간 관련 함수 작업중
+> 1 unix millisecond timestamp 가 너무 수치가 커서 계산이 틈만 나면 계산이 꼬임.
+> 2 그래서 제한 없는 특수 정수 하나 만들고 사칙연산 및 mod 연산기능까지 넣고 사용할 예정 
+```console
+milli-sec size : 13
+value is : 1613141870975
+@millisec object child heap node deleted / 0x559be838b2e8
+
+```
+
 ## 20210427 서버 통신 파트랑 시간관련 클레스 작업시작
 > - JSON PARSER && JSON GENERATOR 작업 확인중 - `라이브러리 쓸지 만들어 쓸지 고민중`
 ```c++
