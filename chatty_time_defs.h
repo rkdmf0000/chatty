@@ -46,6 +46,7 @@ namespace chatty_time_obj{
         };
         virtual numeric_string_object operator+(numeric_string_object& ref); //숫자 넣기
         virtual numeric_string_object operator-(numeric_string_object& ref); //숫자 뺴기
+        virtual unsigned char* c_str();
         unsigned char* data{nullptr};
         unsigned int size   = 0;
         bool is_under       = false;

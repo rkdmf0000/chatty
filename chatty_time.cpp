@@ -20,6 +20,10 @@ chatty_time_obj::numeric_string_object chatty_time_obj::numeric_string_object::o
     return chatty_time_obj::numeric_string_object();
 }
 
+unsigned char* chatty_time_obj::numeric_string_object::c_str() {
+    return this->data;
+};
+
 /*
  * 밀리초 값에 대한 정보를 chatty_time_obj::millisec_object 로 담는 함수입니다.
  * heap 영역에 메로리 하는 만드는데 value by reference 이고
