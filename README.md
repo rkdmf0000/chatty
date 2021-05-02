@@ -1,4 +1,4 @@
-# chatty 시부렁 에러있네
+# chatty chatting server
 
 날려먹는거 방지용
 
@@ -9,6 +9,13 @@
 내부적으로 sqlite3 사용하는디
 
 sql query helper 만들어서 쓰려고 하는중  
+
+
+## 20210427 서버 통신 파트랑 시간관련 클레스 작업시작
+> - JSON PARSER && JSON GENERATOR 작업 확인중 - `라이브러리 쓸지 만들어 쓸지 고민중`
+```c++
+작업중
+```
 
 
 ## 20210427 on proc - 쿼리 부족한 부분까지 완성
