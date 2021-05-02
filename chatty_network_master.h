@@ -6,9 +6,6 @@
 #define CHATTY_CHATTY_NETWORK_MASTER_H
 
 #include "chatty_embedded_db_includes.h"
-#include "chatty_embedded_db_type_defs.h"
-
-#include "chatty_embedded_db_master.h"
 #include "chatty_embedded_db_controller.h"
 
 #include <cstdio>

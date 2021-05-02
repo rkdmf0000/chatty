@@ -1274,6 +1274,10 @@ CHATTY_ANY* chatty_embedded_db_controller::fetch_request_exec(
     }
 }
 
+CHATTY_ANY *chatty_embedded_db_controller::fetch_request_exec(CHATTY_UCHAR_PTR db_path, CHATTY_UCHAR_PTR query, CHATTY_ERROR_CODE *return_error_code) {
+    return chatty_embedded_db_controller::fetch_request_exec(db_path, query, nullptr, return_error_code);
+};
+
 CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_DB_FETCH_RESULT *addr) {
 
     /**
@@ -1339,6 +1343,7 @@ CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_DB_F
 CHATTY_ANY chatty_embedded_db_controller::fetch_request_exec_release(CHATTY_ANY *addr) {
     printf("%s\n", "(Notice) it's on type casting to `CHATTY_DB_FETCH_RESULT*` by language syntax overload for release-ment process");
     chatty_embedded_db_controller::fetch_request_exec_release((CHATTY_DB_FETCH_RESULT*)addr);
-};
+}
+
 
 

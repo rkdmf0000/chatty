@@ -11,7 +11,13 @@ int main() {
 
 
 
+    chatty_time_obj::numeric_string_object* hello;
+    hello = chatty_time::get_millisec();
+    chatty_time::print_millisec_object(hello);
 
+    delete hello;
+
+    exit(1);
 
 
 
