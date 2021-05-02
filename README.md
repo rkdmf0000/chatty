@@ -13,6 +13,7 @@ sql query helper 만들어서 쓰려고 하는중
 
 ## 20210502 시간 관련 함수 작업중
 > 1 unix millisecond timestamp 가 너무 수치가 커서 계산이 틈만 나면 계산이 꼬임.
+> 
 > 2 그래서 제한 없는 특수 정수 하나 만들고 사칙연산 및 mod 연산기능까지 넣고 사용할 예정 
 ```console
 milli-sec size : 13
