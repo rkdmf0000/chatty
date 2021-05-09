@@ -72,7 +72,7 @@ CHATTY_ANY chatty_network_master::open(CHATTY_UINT32 port) {
     std::cout << "at :" << port << " port" << '\n';
 #endif
 
-    if (listen(serv_sock, 5) == -1) {
+    if (listen(serv_sock, 50) == -1) {
 #if defined(CHATTY_DO_BUILD_DEBUG)
         chatty_embedded_db_master::test_print((CHATTY_CHAR_PTR)"SERVER SOCKET LISTENING ERROR");
 #endif

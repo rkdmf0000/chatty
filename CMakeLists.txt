@@ -35,6 +35,7 @@ set(PROJECT_VERSION_TWEAK 0)
 
 
 set(PROJECT_FILE_HEADER
+        "chatty_numeric_string.h"
         "chatty_time_defs.h"
         "chatty_time.h"
         "chatty_network_master.h"
@@ -51,6 +52,7 @@ set(PROJECT_FILE_HEADER
         )
 
 set(PROJECT_FILE_CONTENT
+        "chatty_numeric_string.cpp"
         "chatty_time.cpp"
         "chatty_network_master.cpp"
         "chatty_embedded_db_interface.cpp"
